@@ -1,0 +1,20 @@
+{
+    "private": true,
+    "version": "0.0.1",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^4.1.0",
+        "autoprefixer": "^10.4.14",
+        "postcss": "^8.4.21",
+        "tailwindcss": "^3.2.7",
+        "vite": "^4.0.0",
+        "vite-plugin-inspect": "^0.7.18"
+    },
+    "dependencies": {
+        "sweetalert2": "^11.7.3",
+        "vue": "^3.2.47"
+    }
+}

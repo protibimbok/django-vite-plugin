@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "django_vite_plugin"
+version = "0.0.1"
+authors = [
+  { name="Sakibur Rahman Khan", email="sakib.saad.khan@gmail.com" },
+]
+description = "Vite build tools integration for django"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/protibimbok/django-vite-plugin"
+"Bug Tracker" = "https://github.com/protibimbok/django-vite-plugin/issues"
