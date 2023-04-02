@@ -130,7 +130,7 @@ we can omit this here and serve static files
 # STATIC_ROOT = 'static'
 
 STATICFILES_DIRS = [
-    BASE_DIR / 'static'
+    BASE_DIR / 'assets'
 ]
 
 # Default primary key field type
@@ -140,5 +140,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 DJANGO_VITE_PLUGIN = {
-    'DEV_MODE': True
+    'DEV_MODE': True,
+    'BUILD_DIR': 'assets'
 }
