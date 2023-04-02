@@ -254,10 +254,11 @@ function addStaticToInputs(input: string | string[]): string[] {
         if (path.indexOf('**') > -1){
             return path;
         }
+        path = normalizePath(path)
         const pathArr = path.split('/')
         if (pathArr.length < 2){
             pathArr.unshift('static')
-        } else if (pathArr[1] !== 'static') {
+        } else if (pathArr[1] !== 'static' && pathArr[0] !== 'static') {
             pathArr.splice(1, 0, 'static')
         }
         return pathArr.join('/')
