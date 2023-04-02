@@ -1,5 +1,7 @@
-from typing import Any
+from typing import Any, Dict
+from django.apps import apps
 from django.core.management.base import BaseCommand, CommandParser
+from django.conf import settings
 import django
 from ...config_helper import get_config
 import json
@@ -15,6 +17,7 @@ class Command(BaseCommand):
 
     def handle(self, *args: Any, **options: Any) -> None:
         if options['action'] == 'config':
+            CONFIG['INSTALLED_APPS'] = self.get_apps()
             self.stdout.write(
                 json.dumps(CONFIG)
             )
@@ -23,3 +26,15 @@ class Command(BaseCommand):
                 json.dumps(django.get_version()),
                 ending=''
             )
+    
+    def get_apps(self) -> Dict[str, str]:
+        INSTALLED_APPS = getattr(settings, 'INSTALLED_APPS', [])
+        APPS = {}
+        for app in INSTALLED_APPS:
+            # Ignore dotted named apps
+            if '.' in app:
+                continue
+            APPS[app] = apps.get_app_config(app).path
+
+        return APPS
+

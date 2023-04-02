@@ -3,7 +3,7 @@ import fs from 'fs'
 import { AddressInfo } from 'net'
 import path from 'path'
 import colors from 'picocolors'
-import { Plugin, UserConfig, ResolvedConfig, BuildOptions, ServerOptions } from 'vite'
+import { Plugin, UserConfig, ResolvedConfig, BuildOptions, ServerOptions, normalizePath } from 'vite'
 
 
 interface AppConfig{
@@ -25,6 +25,7 @@ interface AppConfig{
         [key: string]: string
     }
     STATIC_LOOKUP: boolean
+    INSTALLED_APPS: Record<string, string>
 }
 
 
@@ -61,9 +62,7 @@ export default async function djangoVitePlugin (config: PluginConfig) : Promise<
 
 
 function djangoPlugin (config: PluginConfig) : Plugin {
-    const defaultAliases: Record<string, string> = {
-        '@': '',
-    };
+    const defaultAliases: Record<string, string> = getAppAliases(config.appConfig.INSTALLED_APPS);
     let viteDevServerUrl: DevServerUrl
     let resolvedConfig: ResolvedConfig
     //let wsServer: WebSocketServer
@@ -193,6 +192,18 @@ function resolveServerConfig(config: PluginConfig, front?: ServerOptions) : Serv
             cert: fs.readFileSync(serverCfg.CERT),
         }:false
     }
+}
+
+
+function getAppAliases(apps: Record<string, string>) : Record<string, string> {
+    const aliases: Record<string, string> = {
+        '@': '',
+    }
+    for(const app in apps){
+        aliases[`@s:${app}`] = normalizePath(apps[app]+'/static');
+        aliases[`@t:${app}`] = normalizePath(apps[app]+'/templates');
+    }
+    return aliases;
 }
 
 /**
