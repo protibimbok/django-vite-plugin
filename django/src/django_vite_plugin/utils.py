@@ -29,18 +29,17 @@ if not CONFIG['DEV_MODE']:
         )
 
 
-def get_from_manifest(path: str, js_attrs: str, css_attrs: str) -> str:
+def get_from_manifest(path: str, attrs: Dict[str, str]) -> str:
     if path not in VITE_MANIFEST:
         raise RuntimeError(
             f"Cannot find {path} in Vite manifest "
         )
     
     manifest_entry = VITE_MANIFEST[path]
-    assets = _get_css_files(manifest_entry, css_attrs)
+    assets = _get_css_files(manifest_entry, attrs)
     assets += get_html(
         urljoin(CONFIG['BUILD_URL_PREFIX'], manifest_entry["file"]),
-        js_attrs,
-        css_attrs
+        attrs
     )
 
     return assets
@@ -49,7 +48,7 @@ def get_from_manifest(path: str, js_attrs: str, css_attrs: str) -> str:
 
 def _get_css_files(
     manifest_entry: Dict[str, str],
-    css_attrs: str,
+    attrs: Dict[str, str],
     already_processed: List[str] = []
 ) -> str:
 
@@ -59,7 +58,7 @@ def _get_css_files(
         for import_path in manifest_entry['imports']:
             html += _get_css_files(
                 import_path,
-                css_attrs,
+                attrs,
                 already_processed
             )
 
@@ -69,7 +68,7 @@ def _get_css_files(
                 html += get_html(
                     urljoin(CONFIG['BUILD_URL_PREFIX'], css_path),
                     '',
-                    css_attrs
+                    attrs
                 )
             already_processed.append(css_path)
 
@@ -77,10 +76,10 @@ def _get_css_files(
 
 
 
-def get_html(url: str, js_attrs: str, css_attrs: str) -> str:
+def get_html(url: str, attrs: Dict[str, str]) -> str:
     if url.endswith('.css'):
-        return f'<link {css_attrs} href="{url}" />'
+        return f'<link {attrs["css"]} href="{url}" />'
     else:
-        return f'<script {js_attrs} src="{url}"></script>'
+        return f'<script {attrs["js"]} src="{url}"></script>'
     
 
