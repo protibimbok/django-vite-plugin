@@ -13,27 +13,29 @@ DEFAULT = {
         'PORT': 5173
     },
     'JS_ATTRS': {
-        'type': 'module'
+        'type': 'module',
     },
     'CSS_ATTRS': {
-        'rel': 'stylesheet'
+        'rel' : 'stylesheet',
+        'type': 'text/css'
     },
     'STATIC_LOOKUP': True
 }
 
 
-def get_config(
-    config: dict = getattr(settings, 'DJANGO_VITE_PLUGIN', None),
-    default: str = DEFAULT
-) -> dict:
+def get_config() -> dict:
+    config = getattr(settings, 'DJANGO_VITE_PLUGIN', None)
+    return _deep_copy(config, DEFAULT)
 
+
+def _deep_copy(config, default):
     if type(config) != type(default):
         return default
 
     for key in default:
-        if not key in config:
+        if key not in config:
             config[key] = default[key]
         elif type(default[key]) == dict:
-            config[key] = get_config(config[key], default[key])
+            config[key] = _deep_copy(config[key], default[key])
 
     return config
