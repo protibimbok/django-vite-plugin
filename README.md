@@ -42,28 +42,33 @@ INSTALLED_APPS = [
 Now use the following code in your template files to load the assets
 
 ```django
-{% vite '<app_name>/<dir>.../file.css' '<app_name>/<dir>.../file.js' %}
+{% vite '<app_name>/<path>/<to>/<css>/styles.css' %}
 ```
 
 If you want to output any additional attributes in your html, do this:
 ```django
-{% vite 'home/static/css/styles.css' 'home/static/js/app.js' crossorigin='anonymus' integrity='some-sha'%}
+{% vite '---.css' '--.js' crossorigin='anonymus' integrity='some-sha'%}
 ```
 
 This will output:
 ```html
-<link rel="stylesheet" crossorigin="anonymus" integrity="some-sha" href="home/static/css/styles.css"/>
-<script src="home/static/js/app.js" type="module" crossorigin="anonymus" integrity="some-sha"></script>
+<link rel="stylesheet" type="text/css" crossorigin="anonymus" integrity="some-sha" href="---.css"/>
+<script src="---.js" type="module" crossorigin="anonymus" integrity="some-sha"></script>
 ```
 
 > Notice how &lt;script&gt; tag automatically includes type="module" attribute. You can change this behaviour from settings
 
 Let's say you have two files your `home` app
-- home/static -
-   - css/styles.css
-   - js/main.js
-- manage.py
-- ...
+```bash
+└-- home
+    └-- static
+        └-- home
+            |-- css
+            |   └-- styles.css
+            |
+            └-- js
+                └-- main.js
+```
 
 To include these files your Template file would look like:
 
@@ -82,7 +87,7 @@ To include these files your Template file would look like:
     </body>
 </html>
 ```
-> Notice instead of using `home/static/*/*`, we have used `home/*/*`. By default `django_vite_plugin` adds `static` after first segment of the path. This behaviour can be changed from settings
+> Notice instead of using `home/static/home/*/*`, we have used `home/*/*`. By default `django_vite_plugin` adds `static/<app_name>` after first segment of the path. This behaviour can be changed from settings
 
 ### Vite
 
@@ -105,7 +110,9 @@ export default defineConfig({
 
 Here, the argument is `string` or `array of string` that will be passed to `build.rollupOptions.input`.
 
-> Note: Automatic addition of `static` is also applied here
+> Note: Automatic addition of `static/<app_name>` is also applied here
+
+> ***All of the entry points (used as `{% vite '...' '...' %}`) should be added here***
 
 Then run the following commands in two separate terminal
 
@@ -142,14 +149,15 @@ DJANGO_VITE_PLUGIN = {
     'BUILD_URL_PREFIX': getattr(settings, 'STATIC_URL'),
     'SERVER': {
         'HTTPS': False,
-        'HOST': 'localhost',
+        'HOST': '127.0.0.1',
         'PORT': 5173
     },
     'JS_ATTRS': {
         'type': 'module'
     },
     'CSS_ATTRS': {
-        'rel': 'stylesheet'
+        'rel': 'stylesheet',
+        'type': 'text/css'
     },
     'STATIC_LOOKUP': True
 }
@@ -160,17 +168,125 @@ DJANGO_VITE_PLUGIN = {
 
 - `BUILD_DIR` : The directory where vite should output the build assets and from where files would be served. If you serve the files from a separate server, keep the `manifest.json` file of this directory as is.(default: `settings.STATIC_ROOT` or `'static'`)
 
-- `BUILD_URL_PREFIX` : The url prefix for production. If `DEV_MODE` is `False` then all the assets from `<BUILD_DIR>/manifest.json` would be prefixed with this value. If you serve the production build from a separate server, provide the server address here. (default: `settings.STATIC_URL`)
+- `BUILD_URL_PREFIX` : **The url prefix for production.** If `DEV_MODE` is `False` then all the assets from `<BUILD_DIR>/manifest.json` would be prefixed with this value. If you serve the production build from a separate server, provide the server address here. (default: `settings.STATIC_URL`)
 
-- `STATIC_LOOKUP` : Whether to add `static` after first segment of assets. `<app_name>/file` will become `<app_name>/static/file` (default: `True`)
+- `STATIC_LOOKUP` : Whether to add `static/<app_name>` after first segment of assets. `<app_name>/file` will become `<app_name>/static/<app_name>/file` (default: `True`)
 
 - `JS_ATTRS` : Default attributes to output in all `<script>` tags (default: `{'type': 'module'}`)
 
-- `CSS_ATTRS` :  Default attributes to output in all `stylesheet` tags (default: `{'rel': 'stylesheet'}`)
+- `CSS_ATTRS` :  Default attributes to output in all `stylesheet` tags. Default:
+    ```python
+    {
+        'rel': 'stylesheet',
+        'type': 'text/css'
+    }
+    ```
 
 - `SERVER`: The configuration for vite dev server is provided here
     - `HTTPS`: Whether to use secure http connection. If you want to enable https, provide ssl `key` & `cert` here as `{'CERT': '<certificate.cert>', 'KEY':'<ssl_key>'}` (default: `False`)
 
-    - `HOST` : Vite dev server host (default: `localhost`)
+    - `HOST` : Vite dev server host (default: `127.0.0.1`)
 
     - `PORT` : Vite dev server port (default: `5173`)
+
+
+## Features
+
+### 1. Simple And elegant
+
+You don't need a whole different set of setup to start using vite. All you need to do is install the packages and add them. And you are ready to go.
+
+
+### 2. Static file lookup
+
+As per Django's recommendation, `static` files and `templates` should be inside `app_name/static/app_name` and `app_name/templates/app_name`.
+When `STATIC_LOOKUP` is enabled in settings, `static/app_name` can be skipped from the import paths.
+
+So, instead of writing
+```django
+{% vite 'app_name/static/app_name/path/to/asset' %}
+```
+You can write
+```django
+{% vite 'app_name/path/to/asset' %}
+```
+The behaviours of this setting are:
+
+| vite argument             | Include asset path                 |
+|---------------------------|------------------------------------|
+| app_name/script.js        | app_name/static/app_name/script.js |
+| app_name/static/script.js | app_name/static/script.js          |
+| static/script.js          | static/script.js                   |
+
+> To disable this behaviour set { `STATIC_LOOKUP` : `False` }
+
+### 3. JS Import helpers
+
+Just like STATIC_LOOKUP, helpers are available in js too. It uses vite's alias under the hood.
+
+The default aliases are:
+
+| Alias        | Points to                       | 
+|--------------|---------------------------------|
+|@             | &lt;root of the project&gt;     |
+|@s:<app_name> | <app_path>/static/<app_name>    |
+|@t:<app_name> | <app_path>/templates/<app_name> |
+
+> Why alias for `templates`? Do you keep your `*.vue` files in `static` directory?
+
+```javascript
+import whatevs from '@/path/to/whatever'
+// Output: import whatevs from '<project_root>/path/to/whatever'
+
+
+import customAlert from '@s:ui/components/alert'
+// Output: import customAlert from '<project_root>/ui/static/ui/components/alert'
+
+
+import vueCounter from '@t:ui/vue/counter.vue'
+// Output: import vueCounter from '<project_root>/ui/templates/ui/vue/counter.vue'
+```
+
+Setting { `STATIC_LOOKUP` : `False` } will result in 
+
+| Alias        | Points to                   | 
+|--------------|-----------------------------|
+|@             | &lt;root of the project&gt; |
+|@s:<app_name> | <app_path>/static           |
+|@t:<app_name> | <app_path>/templates        |
+
+> Caveat: You won't get autocomplete suggestions in code editor for imported assets
+
+### 4. Test for production
+
+Do this to test if your build files works as expected before shipping it to the production
+
+1. In your projects urls.py add
+    ```python
+    urlpatterns = [
+        # some urls
+        path('', include('django_vite_plugin.urls')),
+        # other urls
+    ]
+
+    ```
+2. In `settings.py` set
+    ```python
+    ...
+
+    STATICFILES_DIRS = [
+        BASE_DIR / 'build'
+    ]
+
+    ...
+
+    DJANGO_VITE_PLUGIN = {
+        # other options
+        'DEV_MODE' : False,
+        'BUILD_DIR': 'build'
+    }
+    ```
+    > Replace `build` with your build directory and make sure it's different from `STATIC_ROOT` if it's set
+
+3. If your `BUILD_URL_PREFIX` contains `http://` or `https://` comment that out.
+4. Run `npm run build` to build your assets and *enjoy!*

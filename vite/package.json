@@ -1,6 +1,6 @@
 {
     "name": "django-vite-plugin",
-    "version": "0.0.1",
+    "version": "1.0.0",
     "description": "Django plugin for Vite.",
     "keywords": [
         "django",
