@@ -9,7 +9,7 @@ DEFAULT = {
     'BUILD_URL_PREFIX': getattr(settings, 'STATIC_URL'), # Manifest paths would be prefixed with this
     'SERVER': {
         'HTTPS': False,
-        'HOST': 'localhost',
+        'HOST': '127.0.0.1',
         'PORT': 5173
     },
     'JS_ATTRS': {
