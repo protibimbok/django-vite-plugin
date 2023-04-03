@@ -121,7 +121,7 @@ def _find_asset(arg: str) -> str:
     if len(pathArr) < 2:
         pathArr.insert(0, 'static')
     elif 'static' not in pathArr[0:2]:
-        pathArr.insert(1, 'static')
+        pathArr.insert(1, 'static/'+pathArr[0])
     return '/'.join(pathArr)
 
 

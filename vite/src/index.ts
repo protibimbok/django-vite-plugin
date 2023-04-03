@@ -62,7 +62,7 @@ export default async function djangoVitePlugin (config: PluginConfig) : Promise<
 
 
 function djangoPlugin (config: PluginConfig) : Plugin {
-    const defaultAliases: Record<string, string> = getAppAliases(config.appConfig.INSTALLED_APPS);
+    const defaultAliases: Record<string, string> = getAppAliases(config.appConfig)
     let viteDevServerUrl: DevServerUrl
     let resolvedConfig: ResolvedConfig
     //let wsServer: WebSocketServer
@@ -195,13 +195,16 @@ function resolveServerConfig(config: PluginConfig, front?: ServerOptions) : Serv
 }
 
 
-function getAppAliases(apps: Record<string, string>) : Record<string, string> {
+function getAppAliases(appConfig: AppConfig) : Record<string, string> {
     const aliases: Record<string, string> = {
         '@': '',
     }
+    const apps = appConfig.INSTALLED_APPS;
+
     for(const app in apps){
-        aliases[`@s:${app}`] = normalizePath(apps[app]+'/static');
-        aliases[`@t:${app}`] = normalizePath(apps[app]+'/templates');
+        const trail = appConfig.STATIC_LOOKUP ? '/' + app : ''
+        aliases[`@s:${app}`] = normalizePath(`${apps[app]}/static${trail}`)
+        aliases[`@t:${app}`] = normalizePath(`${apps[app]}/templates${trail}`)
     }
     return aliases;
 }
@@ -259,7 +262,7 @@ function addStaticToInputs(input: string | string[]): string[] {
         if (pathArr.length < 2){
             pathArr.unshift('static')
         } else if (pathArr[1] !== 'static' && pathArr[0] !== 'static') {
-            pathArr.splice(1, 0, 'static')
+            pathArr.splice(1, 0, 'static/' + pathArr[0])
         }
         return pathArr.join('/')
     })
