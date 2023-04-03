@@ -32,14 +32,15 @@ DJANGO_VITE_PLUGIN = {
     'BUILD_URL_PREFIX': getattr(settings, 'STATIC_URL'), # Bundled assets would be prefixed with this on production
     'SERVER': {
         'HTTPS': False,
-        'HOST': 'localhost',
+        'HOST': '127.0.0.1',
         'PORT': 5173
     },
     'JS_ATTRS': {
         'type': 'module'
     },
     'CSS_ATTRS': {
-        'rel': 'stylesheet'
+        'rel' : 'stylesheet',
+        'type': 'text/css'
     },
     'STATIC_LOOKUP': True
 }
