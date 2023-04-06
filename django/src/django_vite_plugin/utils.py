@@ -67,7 +67,6 @@ def _get_css_files(
             if css_path not in already_processed:
                 html += get_html(
                     urljoin(CONFIG['BUILD_URL_PREFIX'], css_path),
-                    '',
                     attrs
                 )
             already_processed.append(css_path)
