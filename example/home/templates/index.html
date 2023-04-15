@@ -52,7 +52,7 @@
                     {% vite 'home/js/app.js' %}
                 {% endverbatim %}
             </div>
-            <div>
+            <div class="overflow-hidden">
                 {% html %}
                     {% vite 'home/js/app.js' %}
                 {% endhtml %}
@@ -64,7 +64,7 @@
                     {% vite 'another_app/js/one.js' type='text/javascript' data-attr='static_attr' data-dynamic=dyn_attr%}
                 {% endverbatim %}
             </div>
-            <div>
+            <div class="overflow-hidden">
                 {% html %}
                     {% vite 'another_app/js/one.js' type='text/javascript' data-attr='static_attr' data-dynamic=dyn_attr%}
                 {% endhtml %}
@@ -76,7 +76,7 @@
                     {% vite 'static.js' dyn_js dyn_css data-attr='static_attr' %}
                 {% endverbatim %}
             </div>
-            <div>
+            <div class="overflow-hidden">
                 {% html %}
                     {% vite 'static.js' dyn_js dyn_css data-attr='static_attr' %}
                 {% endhtml %}
@@ -88,7 +88,7 @@
                     {% vite dyn_js dyn_css data-attr='static_attr' data-dynamic=dyn_attr%}
                 {% endverbatim %}
             </div>
-            <div>
+            <div class="overflow-hidden">
                 {% html %}
                     {% vite dyn_js dyn_css data-attr='static_attr' data-dynamic=dyn_attr%}
                 {% endhtml %}

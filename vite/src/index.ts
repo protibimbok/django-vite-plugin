@@ -36,6 +36,11 @@ interface PluginConfig{
     input: string|string[]
 
     /**
+     * The root path of the project relative to the `vite.config.js` file
+     */
+    root?: string,
+
+    /**
      * Configuartion provided in project's `settings.py`
      */
     appConfig: AppConfig
@@ -47,14 +52,20 @@ type DevServerUrl = `${'http'|'https'}://${string}:${number}`
 
 
 let DJANGO_VERSION = '...'
-execPython(['version']).then((v: string)=> DJANGO_VERSION = v);
-
-
 
 
 export default async function djangoVitePlugin (config: PluginConfig) : Promise<Plugin[]>{
-    const appConfig = JSON.parse(await execPython(['config']))
-    config = resolvePluginConfig(config, appConfig)
+    process.stdout.write("Loading configurations...\r")
+    const appConfig = JSON.parse(await execPython(['--action', 'config'], config.root))
+
+    if (DJANGO_VERSION === '...') {
+        process.stdout.write("Loading django version...\r")
+        execPython(['--action', 'version'], config.root).then((v: string)=> DJANGO_VERSION = v);
+    }
+
+    process.stdout.write("\r".padStart(26, " "))
+
+    config = await resolvePluginConfig(config, appConfig)
     return [
         djangoPlugin(config)
     ];
@@ -78,6 +89,7 @@ function djangoPlugin (config: PluginConfig) : Plugin {
 
             return {
                 base: command == 'build'?config.appConfig.BUILD_URL_PREFIX:'',
+                root: userConfig.root || config.root || '.',
                 build,
                 server,
                 resolve: {
@@ -142,7 +154,7 @@ function djangoPlugin (config: PluginConfig) : Plugin {
 }
 
 
-function resolvePluginConfig(config: PluginConfig, appConfig: AppConfig): PluginConfig {
+async function resolvePluginConfig(config: PluginConfig, appConfig: AppConfig): Promise<PluginConfig> {
     if (!config){
         throw new Error('django-vite-plugin: no configuration is provided!')
     }
@@ -157,7 +169,7 @@ function resolvePluginConfig(config: PluginConfig, appConfig: AppConfig): Plugin
     }
 
     if (appConfig.STATIC_LOOKUP) {
-        config.input = addStaticToInputs(config.input)
+        config.input = await addStaticToInputs(config.input, config.root)
     }
 
     config.appConfig = appConfig;
@@ -213,9 +225,14 @@ function getAppAliases(appConfig: AppConfig) : Record<string, string> {
  * Get the settings from django project
  */
 
-function execPython(args: string[]): Promise<string> {
+function execPython(args: string[], root?: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        const py = spawn('python', [`manage.py`, 'django_vite_plugin', ...(args || [])]);
+        const py = spawn('python', [
+            path.join(root || '', 'manage.py'),
+            'django_vite_plugin',
+            ...(args || [])
+        ]);
+
         let err = '',
             res = '';
         py.stderr.on('data', (data) => {
@@ -249,23 +266,16 @@ function pluginVersion(): string {
  * Adds 'static' in file paths if already not exists
  */
 
-function addStaticToInputs(input: string | string[]): string[] {
+async function addStaticToInputs(input: string | string[], root?: string): Promise<string[]> {
     if (typeof input === 'string'){
         input = [input]
     }
-    return input.map((path) => {
-        if (path.indexOf('**') > -1){
-            return path;
-        }
-        path = normalizePath(path)
-        const pathArr = path.split('/')
-        if (pathArr.length < 2){
-            pathArr.unshift('static')
-        } else if (pathArr[1] !== 'static' && pathArr[0] !== 'static') {
-            pathArr.splice(1, 0, 'static/' + pathArr[0])
-        }
-        return pathArr.join('/')
-    })
+    const res = await execPython([
+        '--find-static',
+        ...(input.map(f => normalizePath(f)))
+    ], root);
+
+    return JSON.parse(res)
 }
 
 
