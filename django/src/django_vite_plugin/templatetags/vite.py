@@ -1,7 +1,7 @@
 from typing import List, Dict
 from urllib.parse import urljoin
 from django import template
-from ..utils import CONFIG, get_from_manifest, get_html, find_asset
+from ..utils import CONFIG, get_from_manifest, get_html, find_asset, make_attrs
 import copy
 
 register = template.Library()
@@ -114,12 +114,8 @@ def _make_attrs(attrs: Dict[str, str]) -> Dict[str, str]:
         js_attrs[i] = attrs[i]
         css_attrs[i] = attrs[i]
     
-    js_attrs = " ".join(
-        [f'{key}="{value}"' for key, value in js_attrs.items()]
-    )
-    css_attrs = " ".join(
-        [f'{key}="{value}"' for key, value in css_attrs.items()]
-    )
+    js_attrs = make_attrs(js_attrs)
+    css_attrs = make_attrs(css_attrs)
 
     return {
         'js': js_attrs,

@@ -19,11 +19,6 @@ if CONFIG['BUILD_URL_PREFIX'][-1] != "/":
 
 VITE_MANIFEST  = {}
 
-# Compile the default css attributes beforehand
-DEFAULT_CSS_ATTRS = " ".join(
-    [f'{key}="{value}"' for key, value in CONFIG['CSS_ATTRS'].items()]
-)
-
 if not CONFIG['DEV_MODE']:
     manifest_path = getattr(settings, 'BASE_DIR') / CONFIG['BUILD_DIR'].lstrip('/\\') / 'manifest.json'
     try:
@@ -36,6 +31,29 @@ if not CONFIG['DEV_MODE']:
             f"Cannot read Vite manifest file at "
             f"{manifest_path} : {str(error)}"
         )
+
+
+
+def make_attrs(attrs: Dict[str, any]):
+    """
+    Compile attributes to a string
+    if attr is True then just add the attribute
+    """
+    attr_str = ''
+    for key, val in attrs.items():
+        attr_str += key
+
+        if val is False:
+            attr_str += '="false"'
+        elif val is not True:
+            attr_str += f'="{val}"'
+        attr_str += ' '
+    return attr_str[0:-1]
+
+
+
+# Compile the default css attributes beforehand
+DEFAULT_CSS_ATTRS = make_attrs(CONFIG['CSS_ATTRS'])
 
 
 def get_from_manifest(path: str, attrs: Dict[str, str]) -> str:

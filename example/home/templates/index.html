@@ -61,12 +61,12 @@
         <div class="grid grid-cols-2 p-4 text-gray-500">
             <div>
                 {% verbatim %}
-                    {% vite 'another_app/js/one.js' type='text/javascript' data-attr='static_attr' data-dynamic=dyn_attr%}
+                    {% vite 'another_app/js/one.js' type='text/javascript' data-attr='static_attr' data-dynamic=dyn_attr data-true=True data-false=False %}
                 {% endverbatim %}
             </div>
             <div class="overflow-hidden">
                 {% html %}
-                    {% vite 'another_app/js/one.js' type='text/javascript' data-attr='static_attr' data-dynamic=dyn_attr%}
+                    {% vite 'another_app/js/one.js' type='text/javascript' data-attr='static_attr' data-dynamic=dyn_attr data-true=True data-false=False %}
                 {% endhtml %}
             </div>
         </div>
