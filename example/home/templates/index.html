@@ -73,12 +73,12 @@
         <div class="grid grid-cols-2 p-4 text-gray-500">
             <div>
                 {% verbatim %}
-                    {% vite 'static.js' dyn_js dyn_css data-attr='static_attr' %}
+                    {% vite 'static/static.js' dyn_js dyn_css data-attr='static_attr' %}
                 {% endverbatim %}
             </div>
             <div class="overflow-hidden">
                 {% html %}
-                    {% vite 'static.js' dyn_js dyn_css data-attr='static_attr' %}
+                    {% vite 'static/static.js' dyn_js dyn_css data-attr='static_attr' %}
                 {% endhtml %}
             </div>
         </div>
