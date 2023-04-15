@@ -2,6 +2,7 @@ from typing import List, Dict
 from urllib.parse import urljoin
 from django import template
 from ..utils import CONFIG, get_from_manifest, get_html, find_asset
+import copy
 
 register = template.Library()
 
@@ -100,8 +101,14 @@ class ViteAssetNode(template.Node):
 
 
 def _make_attrs(attrs: Dict[str, str]) -> Dict[str, str]:
-    js_attrs = CONFIG['JS_ATTRS']
-    css_attrs = CONFIG['CSS_ATTRS']
+    """
+    If not copied, reference is stored in the
+    `js_attrs` & `css_attrs` variables
+    And then it overrides the config for subsequent
+    assets
+    """
+    js_attrs = copy.copy(CONFIG['JS_ATTRS'])
+    css_attrs = copy.copy(CONFIG['CSS_ATTRS'])
 
     for i in attrs:
         js_attrs[i] = attrs[i]
