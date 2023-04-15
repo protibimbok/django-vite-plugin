@@ -155,6 +155,7 @@ DJANGO_VITE_PLUGIN = {
     'JS_ATTRS': {
         'type': 'module'
     },
+    # 'JS_ATTRS_BUILD': Not present,
     'CSS_ATTRS': {
         'rel': 'stylesheet',
         'type': 'text/css'
@@ -174,6 +175,18 @@ DJANGO_VITE_PLUGIN = {
 
 - `JS_ATTRS` : Default attributes to output in all `<script>` tags (default: `{'type': 'module'}`)
 
+- `JS_ATTRS_BUILD` : If you want your javascript attributes for production files to be different (i.e. add `defer` or `type='text/javascript'`) then add these attributes here as:
+    ```python
+    DJANGO_VITE_PLUGIN = {
+        ...
+        'JS_ATTRS_BUILD': {
+            'type': 'text/javascript',
+            'defer': True
+        },
+        ...
+    }
+    ```
+
 - `CSS_ATTRS` :  Default attributes to output in all `stylesheet` tags. Default:
     ```python
     {
@@ -188,6 +201,52 @@ DJANGO_VITE_PLUGIN = {
     - `HOST` : Vite dev server host (default: `127.0.0.1`)
 
     - `PORT` : Vite dev server port (default: `5173`)
+
+### Javascript
+If you've decided to keep your vite configuration files in separate directory then do this:
+
+```javascript
+djangoVite({
+    input: [
+        '...',
+        '...',
+    ],
+    root: 'path/to/root'
+})
+```
+> Here `root` is the relative path from your `vite.config.js` to your project's root directory.
+
+Let's assume your `vite.config.js` file is in `frontend` directory
+```bash
+|-- home
+|   └-- static
+|       └-- home
+|           |-- css
+|           |   └-- styles.css
+|           |
+|           └-- js
+|               └-- main.js
+└-- frontend
+    └-- vite.config.js
+```
+
+In this case your `vite.config.js` should look like this:
+```javascript
+//vite.config.js
+import { defineConfig } from 'vite'
+import djangoVite from 'django-vite-plugin'
+
+export default defineConfig({
+    plugins: [
+        djangoVite({
+            input: [
+                // Your inputs
+            ],
+            root: '..' // the parent directory 
+        })
+    ],
+});
+```
 
 
 ## Features
@@ -220,6 +279,8 @@ The behaviours of this setting are:
 
 > To disable this behaviour set { `STATIC_LOOKUP` : `False` }
 
+> ***Note:*** This uses Django's built-in staticfinder under the hood
+
 ### 3. JS Import helpers
 
 Just like STATIC_LOOKUP, helpers are available in js too. It uses vite's alias under the hood.
@@ -240,11 +301,11 @@ import whatevs from '@/path/to/whatever'
 
 
 import customAlert from '@s:ui/components/alert'
-// Output: import customAlert from '<project_root>/ui/static/ui/components/alert'
+// Output: import customAlert from '<path_to_ui_app>/static/ui/components/alert'
 
 
 import vueCounter from '@t:ui/vue/counter.vue'
-// Output: import vueCounter from '<project_root>/ui/templates/ui/vue/counter.vue'
+// Output: import vueCounter from '<path_to_ui_app>/templates/ui/vue/counter.vue'
 ```
 
 Setting { `STATIC_LOOKUP` : `False` } will result in 
