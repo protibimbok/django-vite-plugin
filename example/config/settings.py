@@ -141,5 +141,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DJANGO_VITE_PLUGIN = {
     'DEV_MODE': True,
-    'BUILD_DIR': 'assets'
+    'BUILD_DIR': 'assets',
+    'JS_ATTRS_BUILD' : {
+        'type': 'module',
+        'defer': True
+    }
 }

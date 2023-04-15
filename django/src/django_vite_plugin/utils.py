@@ -17,6 +17,9 @@ CONFIG = get_config()
 if CONFIG['BUILD_URL_PREFIX'][-1] != "/":
     CONFIG['BUILD_URL_PREFIX'] += "/"
 
+if CONFIG['DEV_MODE'] is False and 'JS_ATTRS_BUILD' in CONFIG:
+    CONFIG['JS_ATTRS'] = CONFIG['JS_ATTRS_BUILD']
+
 VITE_MANIFEST  = {}
 
 if not CONFIG['DEV_MODE']:
