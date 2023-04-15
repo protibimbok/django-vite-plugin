@@ -1,5 +1,6 @@
 from typing import Dict, List
 from django.conf import settings
+from django.contrib.staticfiles import finders
 from urllib.parse import urljoin
 from .config_helper import get_config
 import json
@@ -7,6 +8,8 @@ import json
 # Length of the root directory
 ROOT_DIR_LEN = len(str(getattr(settings, "BASE_DIR")))
 
+# Cache for previously searched files map
+FOUND_FILES_CACHE = {}
 
 CONFIG = get_config()
 
@@ -91,3 +94,30 @@ def get_html(url: str, attrs: Dict[str, str]) -> str:
         return f'<script {attrs["js"]} src="{url}"></script>'
     
 
+
+def find_asset(arg: str) -> str:
+    """
+    If `STATIC_LOOKUP` is enabled then find the asset
+    using djang's built-in static finder
+
+    Cache the found files for later use
+    """
+    
+
+    if arg in FOUND_FILES_CACHE:
+        return FOUND_FILES_CACHE[arg] 
+    
+    if not CONFIG['STATIC_LOOKUP']:
+        return arg
+    
+
+    found = finders.find(arg, False)
+
+    if found is None:
+        final = arg.strip('/\\')
+    else:
+        final = found[ROOT_DIR_LEN:].strip('/\\').replace('\\', '/')
+
+    FOUND_FILES_CACHE[arg] = final
+
+    return final

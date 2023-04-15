@@ -1,7 +1,7 @@
 from typing import List, Dict
 from urllib.parse import urljoin
 from django import template
-from ..utils import CONFIG, get_from_manifest, get_html
+from ..utils import CONFIG, get_from_manifest, get_html, find_asset
 
 register = template.Library()
 
@@ -33,7 +33,7 @@ def vite(parser, token):
                 hasDynamicPath = True
                 path = template.Variable(bit)
             else:
-                path=_find_asset(bit[1:-1])
+                path=find_asset(bit[1:-1])
             assets.append(path)
 
     
@@ -94,35 +94,9 @@ class ViteAssetNode(template.Node):
                 var = var.resolve(context)
                 if not var:
                     continue
-                assets.append(_find_asset(var))
+                assets.append(find_asset(var))
         return assets
 
-
-
-
-def _find_asset(arg: str) -> str:
-    """
-    If `STATIC_LOOKUP` is enabled then add static
-    if path is not like 'static/**/*' or '**/static/*'
-    
-    if the path is just a filename then 'static' is added in the beginning
-    'file.js' -> 'static/file.js'
-
-    in all other cases, 'static' is inserted after the first directory
-    'app_name/js/script.js' -> 'app_name/static/js/script.js'
-
-    """
-    arg = arg.strip('/\\')
-    if not CONFIG['STATIC_LOOKUP']:
-        return arg
-    
-    pathArr = arg.split('/')
-    
-    if len(pathArr) < 2:
-        pathArr.insert(0, 'static')
-    elif 'static' not in pathArr[0:2]:
-        pathArr.insert(1, 'static/'+pathArr[0])
-    return '/'.join(pathArr)
 
 
 def _make_attrs(attrs: Dict[str, str]) -> Dict[str, str]:
