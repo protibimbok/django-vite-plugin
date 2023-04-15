@@ -15,6 +15,12 @@ if CONFIG['BUILD_URL_PREFIX'][-1] != "/":
     CONFIG['BUILD_URL_PREFIX'] += "/"
 
 VITE_MANIFEST  = {}
+
+# Compile the default css attributes beforehand
+DEFAULT_CSS_ATTRS = " ".join(
+    [f'{key}="{value}"' for key, value in CONFIG['CSS_ATTRS'].items()]
+)
+
 if not CONFIG['DEV_MODE']:
     manifest_path = getattr(settings, 'BASE_DIR') / CONFIG['BUILD_DIR'].lstrip('/\\') / 'manifest.json'
     try:
@@ -36,7 +42,10 @@ def get_from_manifest(path: str, attrs: Dict[str, str]) -> str:
         )
     
     manifest_entry = VITE_MANIFEST[path]
-    assets = _get_css_files(manifest_entry, attrs)
+    assets = _get_css_files(manifest_entry, {
+        # The css files of a js 'import' should get the default attributes
+        'css': DEFAULT_CSS_ATTRS
+    })
     assets += get_html(
         urljoin(CONFIG['BUILD_URL_PREFIX'], manifest_entry["file"]),
         attrs
@@ -67,7 +76,6 @@ def _get_css_files(
             if css_path not in already_processed:
                 html += get_html(
                     urljoin(CONFIG['BUILD_URL_PREFIX'], css_path),
-                    '',
                     attrs
                 )
             already_processed.append(css_path)
