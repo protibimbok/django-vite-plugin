@@ -203,18 +203,21 @@ DJANGO_VITE_PLUGIN = {
     - `PORT` : Vite dev server port (default: `5173`)
 
 ### Javascript
-If you've decided to keep your vite configuration files in separate directory then do this:
+The available js configuration options are:
 
-```javascript
-djangoVite({
-    input: [
-        '...',
-        '...',
-    ],
-    root: 'path/to/root'
-})
+```typescript
+{
+    input: string | string[],
+    root?: string,
+    addAliases?: boolean, 
+}
 ```
-> Here `root` is the relative path from your `vite.config.js` to your project's root directory.
+
+- `input` : The js/css entry points. All of the used js/css files as `{% vite '...' '...' %}` should be added here
+
+- `root` : The relative path from your `vite.config.js` to your project's root directory. If they are the same (which is recommended) skip it.
+
+- `addAliases` : Whether to add the `@s:<app>` & `@t:<app>` aliases in the `jsconfig.json` file. ( Default: `true` )
 
 Let's assume your `vite.config.js` file is in `frontend` directory
 ```bash
@@ -316,9 +319,12 @@ Setting { `STATIC_LOOKUP` : `False` } will result in
 |@s:<app_name> | <app_path>/static           |
 |@t:<app_name> | <app_path>/templates        |
 
-> Caveat: You won't get autocomplete suggestions in code editor for imported assets
+### 4. Js import autocompletions
+You can get autocompletions for these import aliases in the IDEs that support `jsconfig.json`
 
-### 4. Test for production
+To enable this feature, add a `jsconfig.json` file in your projects root directory or in the same directory as `vite.config.js`
+
+### 5. Test for production
 
 Do this to test if your build files works as expected before shipping it to the production
 

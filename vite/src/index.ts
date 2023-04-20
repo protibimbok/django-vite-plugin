@@ -41,6 +41,11 @@ interface PluginConfig{
     root?: string,
 
     /**
+     * If the aliases should be added in the `jsconfig.json` or not
+     */
+    addAliases?: boolean,
+
+    /**
      * Configuartion provided in project's `settings.py`
      */
     appConfig: AppConfig
@@ -74,10 +79,15 @@ export default async function djangoVitePlugin (config: PluginConfig) : Promise<
 
 function djangoPlugin (config: PluginConfig) : Plugin {
     const defaultAliases: Record<string, string> = getAppAliases(config.appConfig)
+
     let viteDevServerUrl: DevServerUrl
     let resolvedConfig: ResolvedConfig
     //let wsServer: WebSocketServer
     //let wsConnected = false
+
+    if (config.addAliases) {
+        writeAliases(config, defaultAliases)
+    }
 
     return {
         name: 'django-vite-plugin',
@@ -172,7 +182,9 @@ async function resolvePluginConfig(config: PluginConfig, appConfig: AppConfig): 
         config.input = await addStaticToInputs(config.input, config.root)
     }
 
-    config.appConfig = appConfig;
+    config.appConfig = appConfig
+
+    config.addAliases = config.addAliases !== false
 
     return config;
 }
@@ -305,4 +317,51 @@ function isIpv6(address: AddressInfo) {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore-next-line
         || address.family === 6;
+}
+
+
+async function writeAliases(config: PluginConfig, aliases: Record<string, string>) {
+    let root = process.cwd();
+    if (config.root) {
+        root = path.join(root, config.root);
+    }
+    let jsconfigPath = path.join(root, "jsconfig.json")
+
+    if (!fs.existsSync(jsconfigPath)) {
+        if (!config.root) {
+            return
+        }
+        root = process.cwd()
+        jsconfigPath = path.join(root, "jsconfig.json")
+        if (!fs.existsSync(jsconfigPath)) {
+            return
+        }
+    }
+
+    let updated = false;
+
+    const jsconfig = JSON.parse(fs.readFileSync(jsconfigPath, "utf8"))
+
+    jsconfig.compilerOptions = jsconfig.compilerOptions || {};
+    const old =
+        jsconfig.compilerOptions.paths || {};
+
+
+    for (let alias in aliases) {
+        let val = normalizePath(path.relative(root, aliases[alias]))
+        if (val !== '.') {
+            val = './' + val
+        }
+        val += '/*'
+        alias += '/*'
+        if (!old[alias] || old[alias].indexOf(val) == -1) {
+            updated = true;
+            old[alias] = [val]
+        }
+    }
+
+    if (updated) {
+        jsconfig.compilerOptions.paths = old;
+        fs.writeFileSync(jsconfigPath, JSON.stringify(jsconfig, null, 2))
+    }
 }

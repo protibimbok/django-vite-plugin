@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@s:django_vite_plugin/*": [
+        "./django_vite_plugin/static/django_vite_plugin/*"
+      ],
+      "@t:django_vite_plugin/*": [
+        "./django_vite_plugin/templates/django_vite_plugin/*"
+      ],
+      "@s:home/*": [
+        "./home/static/home/*"
+      ],
+      "@t:home/*": [
+        "./home/templates/home/*"
+      ],
+      "@s:another_app/*": [
+        "./another_app/static/another_app/*"
+      ],
+      "@t:another_app/*": [
+        "./another_app/templates/another_app/*"
+      ]
+    }
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}
