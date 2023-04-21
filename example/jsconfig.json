@@ -4,12 +4,6 @@
       "@/*": [
         "./*"
       ],
-      "@s:django_vite_plugin/*": [
-        "./django_vite_plugin/static/django_vite_plugin/*"
-      ],
-      "@t:django_vite_plugin/*": [
-        "./django_vite_plugin/templates/django_vite_plugin/*"
-      ],
       "@s:home/*": [
         "./home/static/home/*"
       ],

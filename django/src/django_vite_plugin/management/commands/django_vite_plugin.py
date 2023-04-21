@@ -49,7 +49,7 @@ class Command(BaseCommand):
         APPS = {}
         for app in INSTALLED_APPS:
             # Ignore dotted named apps
-            if '.' in app:
+            if '.' in app or app == 'django_vite_plugin':
                 continue
             APPS[app] = apps.get_app_config(app).path
 
