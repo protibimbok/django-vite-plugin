@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@s:home/*": [
+        "./home/static/home/*"
+      ],
+      "@t:home/*": [
+        "./home/templates/home/*"
+      ],
+      "@s:another_app/*": [
+        "./another_app/static/another_app/*"
+      ],
+      "@t:another_app/*": [
+        "./another_app/templates/another_app/*"
+      ]
+    }
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}
