@@ -184,6 +184,10 @@ async function resolvePluginConfig(config: PluginConfig, appConfig: AppConfig): 
 
     config.appConfig = appConfig
 
+    if (config.addAliases === true) {
+        createJsConfig(config);
+    }
+
     config.addAliases = config.addAliases !== false
 
     return config;
@@ -364,4 +368,29 @@ async function writeAliases(config: PluginConfig, aliases: Record<string, string
         jsconfig.compilerOptions.paths = old;
         fs.writeFileSync(jsconfigPath, JSON.stringify(jsconfig, null, 2))
     }
+}
+
+
+function createJsConfig(config: PluginConfig) {
+    let root = process.cwd();
+    let jsconfigPath = path.join(root, "jsconfig.json")
+
+    if (fs.existsSync(jsconfigPath)) {
+        return
+    }
+
+    const DEFAULT = {
+        exclude: ['node_modules']
+    }
+
+    if (!config.root) {
+        fs.writeFileSync(jsconfigPath, JSON.stringify(DEFAULT, null, 2))
+        return
+    }
+    root = path.join(process.cwd(), config.root)
+    jsconfigPath = path.join(root, "jsconfig.json")
+    if (fs.existsSync(jsconfigPath)) {
+        return
+    }
+    fs.writeFileSync(jsconfigPath, JSON.stringify(DEFAULT, null, 2))
 }

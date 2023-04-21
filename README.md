@@ -217,7 +217,7 @@ The available js configuration options are:
 
 - `root` : The relative path from your `vite.config.js` to your project's root directory. If they are the same (which is recommended) skip it.
 
-- `addAliases` : Whether to add the `@s:<app>` & `@t:<app>` aliases in the `jsconfig.json` file. ( Default: `true` )
+- `addAliases` : Whether to add the `@s:<app>` & `@t:<app>` aliases in the `jsconfig.json` file. If set `true` then will create a `jsconfig.json` if not exists. Default is it will add aliases if `jsconfig.json` file exists
 
 Let's assume your `vite.config.js` file is in `frontend` directory
 ```bash
