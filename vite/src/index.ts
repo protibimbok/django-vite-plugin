@@ -28,8 +28,7 @@ interface AppConfig{
     INSTALLED_APPS: Record<string, string>
 }
 
-
-interface PluginConfig{
+interface PluginConfig {
     /**
      * The path or paths of the entry points to compile.
      */
@@ -44,7 +43,9 @@ interface PluginConfig{
      * If the aliases should be added in the `jsconfig.json` or not
      */
     addAliases?: boolean,
+}
 
+interface InternalConfig extends PluginConfig {
     /**
      * Configuartion provided in project's `settings.py`
      */
@@ -72,12 +73,12 @@ export default async function djangoVitePlugin (config: PluginConfig) : Promise<
 
     config = await resolvePluginConfig(config, appConfig)
     return [
-        djangoPlugin(config)
+        djangoPlugin(config as InternalConfig)
     ];
 }
 
 
-function djangoPlugin (config: PluginConfig) : Plugin {
+function djangoPlugin (config: InternalConfig) : Plugin {
     const defaultAliases: Record<string, string> = getAppAliases(config.appConfig)
 
     let viteDevServerUrl: DevServerUrl
@@ -164,13 +165,12 @@ function djangoPlugin (config: PluginConfig) : Plugin {
 }
 
 
-async function resolvePluginConfig(config: PluginConfig, appConfig: AppConfig): Promise<PluginConfig> {
+async function resolvePluginConfig(config: PluginConfig, appConfig: AppConfig): Promise<InternalConfig> {
     if (!config){
         throw new Error('django-vite-plugin: no configuration is provided!')
     }
 
     if (typeof config === 'string' || Array.isArray(config)){
-        //@ts-expect-error appConfig is added after `resolvePluginConfig` call
         config = {input: config}
     }
 
@@ -182,19 +182,20 @@ async function resolvePluginConfig(config: PluginConfig, appConfig: AppConfig): 
         config.input = await addStaticToInputs(config.input, config.root)
     }
 
+    //@ts-expect-error no way to convert decleared types
     config.appConfig = appConfig
 
     if (config.addAliases === true) {
-        createJsConfig(config);
+        createJsConfig(config as InternalConfig);
     }
 
     config.addAliases = config.addAliases !== false
 
-    return config;
+    return config as InternalConfig;
 }
 
 
-function resolveBuildConfig(config: PluginConfig, front?: BuildOptions) : BuildOptions{
+function resolveBuildConfig(config: InternalConfig, front?: BuildOptions) : BuildOptions{
     return {
         ...(front || {}),
         manifest: front?.manifest?? true,
@@ -207,7 +208,7 @@ function resolveBuildConfig(config: PluginConfig, front?: BuildOptions) : BuildO
     }
 }
 
-function resolveServerConfig(config: PluginConfig, front?: ServerOptions) : ServerOptions{
+function resolveServerConfig(config: InternalConfig, front?: ServerOptions) : ServerOptions{
     const serverCfg = config.appConfig.SERVER;
     return {
         ...(front || {}),
@@ -324,7 +325,7 @@ function isIpv6(address: AddressInfo) {
 }
 
 
-async function writeAliases(config: PluginConfig, aliases: Record<string, string>) {
+async function writeAliases(config: InternalConfig, aliases: Record<string, string>) {
     let root = process.cwd();
     if (config.root) {
         root = path.join(root, config.root);
@@ -371,7 +372,7 @@ async function writeAliases(config: PluginConfig, aliases: Record<string, string
 }
 
 
-function createJsConfig(config: PluginConfig) {
+function createJsConfig(config: InternalConfig) {
     let root = process.cwd();
     let jsconfigPath = path.join(root, "jsconfig.json")
 
