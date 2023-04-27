@@ -32,17 +32,22 @@ interface PluginConfig {
     /**
      * The path or paths of the entry points to compile.
      */
-    input: string|string[]
+    input: string|string[];
 
     /**
      * The root path of the project relative to the `vite.config.js` file
      */
-    root?: string,
+    root?: string;
 
     /**
      * If the aliases should be added in the `jsconfig.json` or not
      */
-    addAliases?: boolean,
+    addAliases?: boolean;
+
+    /**
+     * Path to python executable
+     */
+    pyPath?: string;
 }
 
 interface InternalConfig extends PluginConfig {
@@ -62,11 +67,11 @@ let DJANGO_VERSION = '...'
 
 export default async function djangoVitePlugin (config: PluginConfig) : Promise<Plugin[]>{
     process.stdout.write("Loading configurations...\r")
-    const appConfig = JSON.parse(await execPython(['--action', 'config'], config.root))
+    const appConfig = JSON.parse(await execPython(['--action', 'config'], config))
 
     if (DJANGO_VERSION === '...') {
         process.stdout.write("Loading django version...\r")
-        execPython(['--action', 'version'], config.root).then((v: string)=> DJANGO_VERSION = v);
+        execPython(['--action', 'version'], config).then((v: string)=> DJANGO_VERSION = v);
     }
 
     process.stdout.write("\r".padStart(26, " "))
@@ -179,7 +184,7 @@ async function resolvePluginConfig(config: PluginConfig, appConfig: AppConfig): 
     }
 
     if (appConfig.STATIC_LOOKUP) {
-        config.input = await addStaticToInputs(config.input, config.root)
+        config.input = await addStaticToInputs(config.input, config)
     }
 
     //@ts-expect-error no way to convert decleared types
@@ -242,13 +247,19 @@ function getAppAliases(appConfig: AppConfig) : Record<string, string> {
  * Get the settings from django project
  */
 
-function execPython(args: string[], root?: string): Promise<string> {
+function execPython(args: string[], config: PluginConfig): Promise<string> {
     return new Promise((resolve, reject) => {
-        const py = spawn('python', [
-            path.join(root || '', 'manage.py'),
-            'django_vite_plugin',
-            ...(args || [])
-        ]);
+        const py = spawn(
+            config.pyPath || 'python',
+            [
+                path.join(
+                    config.root || '',
+                    'manage.py'
+                ),
+                'django_vite_plugin',
+                ...(args || [])
+            ]
+        );
 
         let err = '',
             res = '';
@@ -283,14 +294,14 @@ function pluginVersion(): string {
  * Adds 'static' in file paths if already not exists
  */
 
-async function addStaticToInputs(input: string | string[], root?: string): Promise<string[]> {
+async function addStaticToInputs(input: string | string[], config: PluginConfig): Promise<string[]> {
     if (typeof input === 'string'){
         input = [input]
     }
     const res = await execPython([
         '--find-static',
         ...(input.map(f => normalizePath(f)))
-    ], root);
+    ], config);
 
     return JSON.parse(res)
 }
