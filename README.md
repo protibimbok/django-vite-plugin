@@ -210,7 +210,8 @@ The available js configuration options are:
     input: string | string[],
     root?: string,
     addAliases?: boolean,
-    pyPath?: string, 
+    pyPath?: string,
+    pyArgs?: string[]
 }
 ```
 
@@ -221,6 +222,8 @@ The available js configuration options are:
 - `addAliases` : Whether to add the `@s:<app>` & `@t:<app>` aliases in the `jsconfig.json` file. If set `true` then will create a `jsconfig.json` if not exists. Default is it will add aliases if `jsconfig.json` file exists
 
 - `pyPath` : The path to your python executable. (Default: `python`)
+
+- `pyArgs` : Any additional arguments to pass in `manage.py` commands
 
 Let's assume your `vite.config.js` file is in `frontend` directory
 ```bash

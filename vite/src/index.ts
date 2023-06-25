@@ -48,6 +48,10 @@ interface PluginConfig {
      * Path to python executable
      */
     pyPath?: string;
+    /**
+     * Path to python executable
+     */
+    pyArgs?: Array<string>;
 }
 
 interface InternalConfig extends PluginConfig {
@@ -249,6 +253,7 @@ function getAppAliases(appConfig: AppConfig) : Record<string, string> {
 
 function execPython(args: string[], config: PluginConfig): Promise<string> {
     return new Promise((resolve, reject) => {
+        args = [...(args || []), ...(config.pyArgs || [])]
         const py = spawn(
             config.pyPath || 'python',
             [
@@ -257,7 +262,7 @@ function execPython(args: string[], config: PluginConfig): Promise<string> {
                     'manage.py'
                 ),
                 'django_vite_plugin',
-                ...(args || [])
+                ...args
             ]
         );
 
