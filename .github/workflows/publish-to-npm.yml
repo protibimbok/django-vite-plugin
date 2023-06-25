@@ -17,10 +17,15 @@ jobs:
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
-      - run: cd vite
-      - run: npm install -g pnpm
-      - run: pnpm install
-      - run: pnpm build
-      - run: pnpm publish --no-git-checks
+      
+      - name: Install dependencies
+        run: npm install -g pnpm
+
+      - name: Build and Publish
+        working-directory: vite
+        run: |
+          pnpm install
+          pnpm build
+          pnpm publish --no-git-checks
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
