@@ -14,8 +14,7 @@ export default defineConfig({
                 //index.html
                 'another_app/js/one.js',
                 ...glob.sync('static/**/*.{js,css}'),
-            ],
-            pyArgs: ['--settings', 'config.settings2']
+            ]
         })
     ],
 });
