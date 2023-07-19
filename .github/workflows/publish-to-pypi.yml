@@ -25,13 +25,15 @@ jobs:
       - name: Publish distribution 📦 to Test PyPI
         env:
           TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
-          TWINE_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
         working-directory: django
         run: twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
       - name: Publish distribution 📦 to PyPI
         env:
           TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
-          TWINE_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         working-directory: django
         run: twine upload dist/*
