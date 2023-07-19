@@ -1,4 +1,5 @@
 from typing import Dict, List
+import sys
 from django.conf import settings
 from django.contrib.staticfiles import finders
 from urllib.parse import urljoin
@@ -22,7 +23,7 @@ if CONFIG['DEV_MODE'] is False and 'JS_ATTRS_BUILD' in CONFIG:
 
 VITE_MANIFEST  = {}
 
-if not CONFIG['DEV_MODE']:
+if len(sys.argv) < 2 or sys.argv[1] != 'django_vite_plugin':
     manifest_path = getattr(settings, 'BASE_DIR') / CONFIG['BUILD_DIR'].lstrip('/\\') / 'manifest.json'
     try:
         manifest_file = open(manifest_path, "r")
