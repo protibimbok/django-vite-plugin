@@ -1,0 +1,37 @@
+name: Publish Python 🐍 distributions 📦 to PyPI and TestPyPI
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build-n-publish:
+    if: endsWith(github.ref, '-py')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - name: Install pip
+        run: python3 -m pip install --upgrade pip
+      - name: Install build & twine
+        run: pip install build twine
+      - name: Build a binary wheel and a source tarball
+        working-directory: django
+        run: python3 -m build
+        
+      - name: Publish distribution 📦 to Test PyPI
+        env:
+          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
+          TWINE_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        working-directory: django
+        run: twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+
+      - name: Publish distribution 📦 to PyPI
+        env:
+          TWINE_REPOSITORY_URL: https://upload.pypi.org/legacy/
+          TWINE_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        working-directory: django
+        run: twine upload dist/*
