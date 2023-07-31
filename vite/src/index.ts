@@ -69,7 +69,7 @@ type DevServerUrl = `${'http'|'https'}://${string}:${number}`
 let DJANGO_VERSION = '...'
 
 
-export default async function djangoVitePlugin (config: PluginConfig) : Promise<Plugin[]>{
+export default async function djangoVitePlugin (config: PluginConfig | string[]) : Promise<Plugin[]>{
     process.stdout.write("Loading configurations...\r")
     const appConfig = JSON.parse(await execPython(['--action', 'config'], config))
 
