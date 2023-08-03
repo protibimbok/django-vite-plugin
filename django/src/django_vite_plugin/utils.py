@@ -22,7 +22,13 @@ if CONFIG['DEV_MODE'] is False and 'JS_ATTRS_BUILD' in CONFIG:
     CONFIG['JS_ATTRS'] = CONFIG['JS_ATTRS_BUILD']
 
 VITE_MANIFEST  = {}
-manifest_path = getattr(settings, 'BASE_DIR') / CONFIG['BUILD_DIR'].lstrip('/\\') / 'manifest.json'
+
+if isinstance(CONFIG['BUILD_DIR'], str):
+    manifest_path = getattr(settings, 'BASE_DIR') / CONFIG['BUILD_DIR'].lstrip('/\\')
+else:
+    manifest_path = CONFIG['BUILD_DIR']
+manifest_path = manifest_path / 'manifest.json'
+
 if not CONFIG['DEV_MODE'] and path.isfile(manifest_path):
     try:
         manifest_file = open(manifest_path, "r")
