@@ -69,7 +69,10 @@ type DevServerUrl = `${'http'|'https'}://${string}:${number}`
 let DJANGO_VERSION = '...'
 
 
-export default async function djangoVitePlugin (config: PluginConfig) : Promise<Plugin[]>{
+export default async function djangoVitePlugin (config: PluginConfig | string | string[]) : Promise<Plugin[]>{
+    if (typeof config === 'string' || Array.isArray(config)){
+        config = {input: config}
+    }
     process.stdout.write("Loading configurations...\r")
     const appConfig = JSON.parse(await execPython(['--action', 'config'], config))
 
@@ -177,10 +180,6 @@ function djangoPlugin (config: InternalConfig) : Plugin {
 async function resolvePluginConfig(config: PluginConfig, appConfig: AppConfig): Promise<InternalConfig> {
     if (!config){
         throw new Error('django-vite-plugin: no configuration is provided!')
-    }
-
-    if (typeof config === 'string' || Array.isArray(config)){
-        config = {input: config}
     }
 
     if (typeof config.input === 'undefined'){
