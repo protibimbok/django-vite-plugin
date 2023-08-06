@@ -111,6 +111,7 @@ function djangoPlugin (config: InternalConfig) : Plugin {
             const build = resolveBuildConfig(config, userConfig.build);
 
             return {
+                ...userConfig,
                 base: command == 'build'?config.appConfig.BUILD_URL_PREFIX:'',
                 root: userConfig.root || config.root || '.',
                 build,
