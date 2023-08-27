@@ -96,11 +96,11 @@ In your `vite.config.js` file add `django-vite-plugin`
 ```javascript
 //vite.config.js
 import { defineConfig } from 'vite'
-import djangoVite from 'django-vite-plugin'
+import { djangoVitePlugin } from 'django-vite-plugin'
 
 export default defineConfig({
     plugins: [
-        djangoVite([
+        djangoVitePlugin([
             'home/js/app.js',
             'home/css/style.css',
         ])
@@ -243,11 +243,11 @@ In this case your `vite.config.js` should look like this:
 ```javascript
 //vite.config.js
 import { defineConfig } from 'vite'
-import djangoVite from 'django-vite-plugin'
+import { djangoVitePlugin } from 'django-vite-plugin'
 
 export default defineConfig({
     plugins: [
-        djangoVite({
+        djangoVitePlugin({
             input: [
                 // Your inputs
             ],

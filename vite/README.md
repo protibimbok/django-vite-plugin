@@ -12,6 +12,10 @@ This plugin configures Vite for use with Django backend.
 
 ## Installation
 ```sh
+# Install django app (this is required)
+pip install django_vite_plugin
+
+# Install vite plugin
 npm install django-vite-plugin
 ```
 
@@ -21,11 +25,11 @@ npm install django-vite-plugin
 ```javascript
 //vite.config.js
 import { defineConfig } from 'vite'
-import djangoVite from 'django-vite-plugin'
+import { djangoVitePlugin } from 'django-vite-plugin'
 
 export default defineConfig({
     plugins: [
-        djangoVite([
+        djangoVitePlugin([
             'home/js/app.js',
             'home/css/style.css',
         ])

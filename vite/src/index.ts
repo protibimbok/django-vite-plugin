@@ -69,7 +69,7 @@ type DevServerUrl = `${'http'|'https'}://${string}:${number}`
 let DJANGO_VERSION = '...'
 
 
-export default async function djangoVitePlugin (config: PluginConfig | string | string[]) : Promise<Plugin[]>{
+export async function djangoVitePlugin (config: PluginConfig | string | string[]) : Promise<Plugin[]>{
     if (typeof config === 'string' || Array.isArray(config)){
         config = {input: config}
     }
@@ -89,6 +89,7 @@ export default async function djangoVitePlugin (config: PluginConfig | string | 
     ];
 }
 
+export default djangoVitePlugin;
 
 function djangoPlugin (config: InternalConfig) : Plugin {
     const defaultAliases: Record<string, string> = getAppAliases(config.appConfig)
