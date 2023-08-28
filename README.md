@@ -23,6 +23,16 @@ pip install django_vite_plugin
 npm install django-vite-plugin
 ```
 
+## Feature Highlights
+
+#### 1. Simple And elegant
+#### 2. Static file lookup
+#### 3. Auto Reload
+#### 4. JS Import helpers
+#### 5. Js import autocompletions
+#### 6. Test for production
+
+
 ## Usage
 
 
@@ -211,7 +221,9 @@ The available js configuration options are:
     root?: string,
     addAliases?: boolean,
     pyPath?: string,
-    pyArgs?: string[]
+    pyArgs?: string[],
+    reloader?: boolean | (file: string) => boolean,
+    watch?: string[] 
 }
 ```
 
@@ -224,6 +236,12 @@ The available js configuration options are:
 - `pyPath` : The path to your python executable. (Default: `python`)
 
 - `pyArgs` : Any additional arguments to pass in `manage.py` commands
+
+- `reloader` : Whether to reload browser on html & py file changes.
+You may pass a function to reload after checking which file has changed.
+By default it checks for html & py extensions.
+
+- `watch`: A list of additional files to watch for browser reload. By default it smartly detects the python files in your installed apps and triggers the browser reload.
 
 Let's assume your `vite.config.js` file is in `frontend` directory
 ```bash
@@ -290,7 +308,11 @@ The behaviours of this setting are:
 
 > ***Note:*** This uses Django's built-in staticfinder under the hood
 
-### 3. JS Import helpers
+### 3. Auto Reload
+
+This plugin reloads your browser window whenever a relavent file is changed!
+
+### 4. JS Import helpers
 
 Just like STATIC_LOOKUP, helpers are available in js too. It uses vite's alias under the hood.
 
@@ -325,12 +347,12 @@ Setting { `STATIC_LOOKUP` : `False` } will result in
 |@s:<app_name> | <app_path>/static           |
 |@t:<app_name> | <app_path>/templates        |
 
-### 4. Js import autocompletions
+### 5. Js import autocompletions
 You can get autocompletions for these import aliases in the IDEs that support `jsconfig.json`
 
 To enable this feature, add a `jsconfig.json` file in your projects root directory or in the same directory as `vite.config.js`
 
-### 5. Test for production
+### 6. Test for production
 
 Do this to test if your build files works as expected before shipping it to the production
 
