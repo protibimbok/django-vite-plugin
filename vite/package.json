@@ -43,6 +43,7 @@
         "node": ">=14"
     },
     "dependencies": {
+        "glob": "^10.3.3",
         "picocolors": "^1.0.0"
     }
 }
