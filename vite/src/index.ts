@@ -9,7 +9,7 @@ import {
     resolveDevServerUrl,
     writeAliases,
     getAppAliases,
-} from './helpers'
+} from './helpers.js'
 import {
     DevServerUrl,
     InternalConfig,
@@ -17,7 +17,7 @@ import {
     resolveBuildConfig,
     resolvePluginConfig,
     resolveServerConfig,
-} from './config'
+} from './config.js'
 
 let DJANGO_VERSION = '...'
 

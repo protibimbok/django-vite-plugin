@@ -1,7 +1,7 @@
 import fs from 'fs'
 import { BuildOptions, ServerOptions } from 'vite'
-import { addStaticToInputs, createJsConfig } from './helpers'
-import glob from 'glob'
+import { glob } from 'glob'
+import { addStaticToInputs, createJsConfig } from './helpers.js'
 
 export interface AppConfig {
     WS_CLIENT: string

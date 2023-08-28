@@ -3,7 +3,7 @@ import fs from "fs";
 import { AddressInfo } from "net";
 import path from "path";
 import { ResolvedConfig, normalizePath } from "vite";
-import type { AppConfig, DevServerUrl, InternalConfig, PluginConfig } from "./config";
+import type { AppConfig, DevServerUrl, InternalConfig, PluginConfig } from "./config.js";
 
 export function execPython(
     args: string[],
