@@ -223,7 +223,8 @@ The available js configuration options are:
     pyPath?: string,
     pyArgs?: string[],
     reloader?: boolean | (file: string) => boolean,
-    watch?: string[] 
+    watch?: string[],
+    delay?: number,
 }
 ```
 
@@ -242,6 +243,8 @@ You may pass a function to reload after checking which file has changed.
 By default it checks for html & py extensions.
 
 - `watch`: A list of additional files to watch for browser reload. By default it smartly detects the python files in your installed apps and triggers the browser reload.
+
+- `delay`: Delay to reload after file change in milliseconds.
 
 Let's assume your `vite.config.js` file is in `frontend` directory
 ```bash

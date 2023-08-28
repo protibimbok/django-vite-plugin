@@ -55,6 +55,7 @@ export interface PluginConfig {
      */
     reloader?: boolean | ((file: string) => boolean)
     watch?: string[]
+    delay?: number
 }
 
 export interface InternalConfig extends PluginConfig {
@@ -144,6 +145,10 @@ async function resolveFullReloadConfig(config: PluginConfig, apps: Record<string
     } else if (!config.reloader) {
         config.watch = []
         return
+    }
+
+    if (typeof config.delay !== 'number') {
+        config.delay = 3000;
     }
 
     if (Array.isArray(config.watch)) {

@@ -44,7 +44,7 @@ export async function djangoVitePlugin(
     config = await resolvePluginConfig(config, appConfig)
     return [
         djangoPlugin(config as InternalConfig),
-        fullReload(config.reloader || false, config.watch),
+        fullReload(config as InternalConfig),
     ]
 }
 
@@ -146,17 +146,15 @@ function djangoPlugin(config: InternalConfig): Plugin {
     }
 }
 
-function fullReload(
-    reload: boolean | ((file: string) => boolean),
-    watch?: string[],
-): Plugin {
-    if (!reload) {
+function fullReload(config: InternalConfig): Plugin {
+    if (!config.reloader) {
         return {
             name: 'django-vite-plugin-reloader',
         }
     }
-    if (reload === true) {
-        reload = (file: string) => /\.(html|py)$/.test(file)
+    let reloader = config.reloader
+    if (reloader === true) {
+        reloader = (file: string) => /\.(html|py)$/.test(file)
     }
 
     return {
@@ -164,12 +162,15 @@ function fullReload(
         configureServer({ ws, watcher }) {
             watcher.on('change', (file) => {
                 // @ts-ignore
-                if (reload(file)) {
-                    ws.send({ type: 'full-reload', path: file })
+                if (reloader(file)) {
+                    setTimeout(
+                        () => ws.send({ type: 'full-reload', path: '*' }),
+                        config.delay,
+                    )
                 }
             })
-            if (watch) {
-                watch.forEach((file) => {
+            if (config.watch) {
+                config.watch.forEach((file) => {
                     if (file.indexOf('__pycache__') >= 0) {
                         return
                     }
