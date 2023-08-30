@@ -7,7 +7,7 @@
         "vite",
         "vite-plugin"
     ],
-    "homepage": "https://github.com/protibimbok/django-vite-plugin",
+    "homepage": "https://github.com/protibimbok/django-vite-plugin#readme",
     "repository": {
         "type": "git",
         "url": "https://github.com/protibimbok/django-vite-plugin"
