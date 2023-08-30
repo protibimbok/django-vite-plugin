@@ -1,12 +1,12 @@
 import { defineConfig } from 'vite'
-import djangoVite from './django-vite-plugin/index.js'
+import { djangoVitePlugin } from 'django-vite-plugin'
 import vue from '@vitejs/plugin-vue'
 import glob from 'glob'
 
 export default defineConfig({
     plugins: [
         vue(),
-        djangoVite({
+        djangoVitePlugin({
             input:[
                 'home/js/app.js',
                 'home/css/tailwind.css',
