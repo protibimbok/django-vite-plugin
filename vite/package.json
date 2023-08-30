@@ -1,13 +1,12 @@
 {
     "name": "django-vite-plugin",
-    "version": "2.0.1",
+    "version": "2.0.2",
     "description": "Django plugin for Vite.",
     "keywords": [
         "django",
         "vite",
         "vite-plugin"
     ],
-    "type": "module",
     "homepage": "https://github.com/protibimbok/django-vite-plugin",
     "repository": {
         "type": "git",
