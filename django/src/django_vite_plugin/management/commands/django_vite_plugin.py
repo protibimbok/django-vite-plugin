@@ -6,9 +6,14 @@ import django
 from ...config_helper import get_config
 from ...utils import find_asset
 import json
+import pathlib
 
 CONFIG = get_config()
-CONFIG['BUILD_DIR'] = CONFIG['BUILD_DIR'].strip('/\\')
+if isinstance(CONFIG["BUILD_DIR"], str):
+    CONFIG["BUILD_DIR"] = CONFIG["BUILD_DIR"].strip("/\\")
+elif isinstance(CONFIG["BUILD_DIR"], pathlib.WindowsPath):
+    CONFIG["BUILD_DIR"] = str(CONFIG["BUILD_DIR"])
+
 
 class Command(BaseCommand):
     help = 'Communicates with the django-vite-plugin'
