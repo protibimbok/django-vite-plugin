@@ -93,16 +93,6 @@ function djangoPlugin(config: InternalConfig): Plugin {
         configResolved(config) {
             resolvedConfig = config
         },
-
-        transform(code) {
-            if (resolvedConfig.command === 'serve') {
-                code = code.replace(
-                    /__django_vite_placeholder__/g,
-                    viteDevServerUrl,
-                )
-                return code
-            }
-        },
         configureServer(server) {
             server.httpServer?.once('listening', () => {
                 const address = server.httpServer?.address()
