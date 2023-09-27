@@ -65,52 +65,6 @@ export async function addStaticToInputs(
     return JSON.parse(res);
 }
 
-/**
- * Resolve the dev server URL from the server address and configuration.
- */
-export function resolveDevServerUrl(
-    address: AddressInfo,
-    config: ResolvedConfig
-): DevServerUrl {
-    const configHmrProtocol =
-        typeof config.server.hmr === "object"
-            ? config.server.hmr.protocol
-            : null;
-    const clientProtocol = configHmrProtocol
-        ? configHmrProtocol === "wss"
-            ? "https"
-            : "http"
-        : null;
-    const serverProtocol = config.server.https ? "https" : "http";
-    const protocol = clientProtocol ?? serverProtocol;
-
-    const configHmrHost =
-        typeof config.server.hmr === "object" ? config.server.hmr.host : null;
-    const configHost =
-        typeof config.server.host === "string" ? config.server.host : null;
-    const serverAddress = isIpv6(address)
-        ? `[${address.address}]`
-        : address.address;
-    const host = configHmrHost ?? configHost ?? serverAddress;
-
-    const configHmrClientPort =
-        typeof config.server.hmr === "object"
-            ? config.server.hmr.clientPort
-            : null;
-    const port = configHmrClientPort ?? address.port;
-
-    return `${protocol}://${host}:${port}`;
-}
-
-export function isIpv6(address: AddressInfo) {
-    return (
-        address.family === "IPv6" ||
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore-next-line
-        address.family === 6
-    );
-}
-
 export async function writeAliases(
     config: InternalConfig,
     aliases: Record<string, string>

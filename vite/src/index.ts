@@ -6,7 +6,6 @@ import { Plugin, UserConfig, ResolvedConfig } from 'vite'
 import {
     pluginVersion,
     execPython,
-    resolveDevServerUrl,
     writeAliases,
     getAppAliases,
 } from './helpers.js'
@@ -53,7 +52,6 @@ function djangoPlugin(config: InternalConfig): Plugin {
         config.appConfig,
     )
 
-    let viteDevServerUrl: DevServerUrl
     let resolvedConfig: ResolvedConfig
 
     if (config.addAliases) {
@@ -101,11 +99,6 @@ function djangoPlugin(config: InternalConfig): Plugin {
                     x: string | AddressInfo | null | undefined,
                 ): x is AddressInfo => typeof x === 'object'
                 if (isAddressInfo(address)) {
-                    viteDevServerUrl = resolveDevServerUrl(
-                        address,
-                        server.config,
-                    )
-
                     setTimeout(() => {
                         server.config.logger.info(
                             `\n  ${colors.red(
