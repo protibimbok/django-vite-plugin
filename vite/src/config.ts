@@ -79,7 +79,9 @@ export async function resolvePluginConfig(
         throw new Error('django-vite-plugin: no input is provided!')
     }
 
-    const promises: any = [resolveFullReloadConfig(config, appConfig.INSTALLED_APPS)]
+    const promises: any = [
+        resolveFullReloadConfig(config, appConfig.INSTALLED_APPS),
+    ]
 
     if (appConfig.STATIC_LOOKUP) {
         promises.push(addStaticToInputs(config.input, config))
@@ -123,23 +125,29 @@ export function resolveServerConfig(
     front?: ServerOptions,
 ): ServerOptions {
     const serverCfg = config.appConfig.SERVER
+    const host = serverCfg.HOST
+    const port = serverCfg.PORT
+    const https =
+        serverCfg.CERT && serverCfg.KEY
+            ? {
+                  key: fs.readFileSync(serverCfg.KEY),
+                  cert: fs.readFileSync(serverCfg.CERT),
+              }
+            : false
     return {
         ...(front || {}),
-        origin: front?.origin ?? '__django_vite_placeholder__',
-        host: front?.host || serverCfg.HOST,
-        port: front?.port || serverCfg.PORT,
-        strictPort: !front?.port,
-        https:
-            serverCfg.CERT && serverCfg.KEY
-                ? {
-                      key: fs.readFileSync(serverCfg.KEY),
-                      cert: fs.readFileSync(serverCfg.CERT),
-                  }
-                : false,
+        origin: `http${https ? 's' : ''}://${host}:${port}`,
+        host,
+        port,
+        strictPort: true,
+        https,
     }
 }
 
-async function resolveFullReloadConfig(config: PluginConfig, apps: Record<string, string>) {
+async function resolveFullReloadConfig(
+    config: PluginConfig,
+    apps: Record<string, string>,
+) {
     if (typeof config.reloader === 'undefined') {
         config.reloader = true
     } else if (!config.reloader) {
@@ -148,19 +156,19 @@ async function resolveFullReloadConfig(config: PluginConfig, apps: Record<string
     }
 
     if (typeof config.delay !== 'number') {
-        config.delay = 3000;
+        config.delay = 3000
     }
 
     if (Array.isArray(config.watch)) {
         return
     }
 
-    const root = config.root || '.';
-    const watch: string[] = [];
+    const root = config.root || '.'
+    const watch: string[] = []
 
     for (const app in apps) {
         if (fs.existsSync(root + '/' + app)) {
-            watch.push(`${root}/${app}/**/*.py`);
+            watch.push(`${root}/${app}/**/*.py`)
         }
     }
     config.watch = glob.globSync(watch)
