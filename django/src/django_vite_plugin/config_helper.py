@@ -1,12 +1,15 @@
 from django.conf import settings, global_settings
 
 
-# MANIFEST_PATH = Path(MANIFEST_PATH)
+"""
+We want this plugin to work without any configurations
+So, the value of the BUILD_DIR must be something
+"""
 DEFAULT = {
     'WS_CLIENT': '@vite/client',
     'DEV_MODE': getattr(settings, 'DEBUG', global_settings.DEBUG),
-    'BUILD_DIR': getattr(settings, 'STATIC_ROOT', global_settings.STATIC_ROOT),
-    'BUILD_URL_PREFIX': getattr(settings, 'STATIC_URL', global_settings.STATIC_URL), # Manifest paths would be prefixed with this
+    'BUILD_DIR': getattr(settings, 'STATIC_ROOT', global_settings.STATIC_ROOT) or getattr(settings, 'BASE_DIR') / 'static',
+    'BUILD_URL_PREFIX': getattr(settings, 'STATIC_URL', global_settings.STATIC_URL), # Production asset urls would be prefixed with this
     'SERVER': {
         'HTTPS': False,
         'HOST': '127.0.0.1',
