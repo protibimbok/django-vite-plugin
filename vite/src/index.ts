@@ -2,15 +2,14 @@ import fs from 'fs'
 import { AddressInfo } from 'net'
 import path from 'path'
 import colors from 'picocolors'
-import { Plugin, UserConfig, ResolvedConfig } from 'vite'
+import { Plugin, UserConfig } from 'vite'
 import {
     pluginVersion,
-    execPython,
+    execPythonJSON,
     writeAliases,
     getAppAliases,
 } from './helpers.js'
 import {
-    DevServerUrl,
     InternalConfig,
     PluginConfig,
     resolveBuildConfig,
@@ -27,14 +26,12 @@ export async function djangoVitePlugin(
         config = { input: config }
     }
     process.stdout.write('Loading configurations...\r')
-    const appConfig = JSON.parse(
-        await execPython(['--action', 'config'], config),
-    )
+    const appConfig = await execPythonJSON(['--action', 'config'], config)
 
     if (DJANGO_VERSION === '...') {
         process.stdout.write('Loading django version...\r')
-        execPython(['--action', 'version'], config).then(
-            (v: string) => (DJANGO_VERSION = v),
+        execPythonJSON(['--action', 'version'], config).then(
+            (v: string) => (DJANGO_VERSION = `"${v}"`),
         )
     }
 
@@ -51,8 +48,6 @@ function djangoPlugin(config: InternalConfig): Plugin {
     const defaultAliases: Record<string, string> = getAppAliases(
         config.appConfig,
     )
-
-    let resolvedConfig: ResolvedConfig
 
     if (config.addAliases) {
         writeAliases(config, defaultAliases)
@@ -88,9 +83,6 @@ function djangoPlugin(config: InternalConfig): Plugin {
                 },
             }
         },
-        configResolved(config) {
-            resolvedConfig = config
-        },
         configureServer(server) {
             server.httpServer?.once('listening', () => {
                 const address = server.httpServer?.address()
@@ -105,7 +97,7 @@ function djangoPlugin(config: InternalConfig): Plugin {
                                 `${colors.bold('DJANGO')}`,
                             )} ${DJANGO_VERSION} ${colors.dim(
                                 'plugin',
-                            )} ${colors.bold(`v${pluginVersion()}`)}`,
+                            )} ${colors.bold(`"${pluginVersion()}"`)}`,
                         )
                         server.config.logger.info('')
                     }, 100)
