@@ -11,7 +11,7 @@ import pathlib
 CONFIG = get_config()
 if isinstance(CONFIG["BUILD_DIR"], str):
     CONFIG["BUILD_DIR"] = CONFIG["BUILD_DIR"].strip("/\\")
-elif isinstance(CONFIG["BUILD_DIR"], pathlib.WindowsPath):
+elif isinstance(CONFIG["BUILD_DIR"], pathlib.Path):
     CONFIG["BUILD_DIR"] = str(CONFIG["BUILD_DIR"])
 
 
