@@ -133,7 +133,7 @@ export function resolveServerConfig(
                   key: fs.readFileSync(serverCfg.KEY),
                   cert: fs.readFileSync(serverCfg.CERT),
               }
-            : false
+            : undefined
     return {
         ...(front || {}),
         origin: `http${https ? 's' : ''}://${host}:${port}`,
