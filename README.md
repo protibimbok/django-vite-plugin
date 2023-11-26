@@ -156,6 +156,7 @@ DJANGO_VITE_PLUGIN = {
     'WS_CLIENT': '@vite/client',
     'DEV_MODE': getattr(settings, 'DEBUG', True),
     'BUILD_DIR': getattr(settings, 'STATIC_ROOT') or 'static',
+    'MANIFEST': '<BUILD_DIR>/.vite/manifest.json',
     'BUILD_URL_PREFIX': getattr(settings, 'STATIC_URL'),
     'SERVER': {
         'HTTPS': False,
@@ -177,7 +178,9 @@ DJANGO_VITE_PLUGIN = {
 
 - `DEV_MODE` : If set `True`, vite dev server will be used to link assets, otherwise build files. (default: `settings.DEBUG`)
 
-- `BUILD_DIR` : The directory where vite should output the build assets and from where files would be served. If you serve the files from a separate server, keep the `manifest.json` file of this directory as is.(default: `settings.STATIC_ROOT` or `'static'`)
+- `BUILD_DIR` : The directory where vite should output the build assets. If you serve the  assets from a different server (i.e. cdn), keep the directory structure as is.(default: `settings.STATIC_ROOT` or `'static'`)
+
+- `MANIFEST` : The path of the `manifest.json` file. The default is `<BUILD_DIR>/.vite/manifest.json` as per `Vite v5`. Even if you serve the assets from a different server, the manifest must stay in the specified location.
 
 - `BUILD_URL_PREFIX` : **The url prefix for production.** If `DEV_MODE` is `False` then all the assets from `<BUILD_DIR>/manifest.json` would be prefixed with this value. If you serve the production build from a separate server, provide the server address here. (default: `settings.STATIC_URL`)
 
