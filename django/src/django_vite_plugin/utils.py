@@ -23,12 +23,12 @@ if CONFIG['DEV_MODE'] is False and 'JS_ATTRS_BUILD' in CONFIG:
 
 VITE_MANIFEST  = {}
 
-manifest_path = CONFIG['BUILD_DIR']
-if isinstance(manifest_path, str):
-    manifest_path = getattr(settings, 'BASE_DIR') / manifest_path.lstrip('/\\')
-manifest_path = manifest_path / 'manifest.json'
-
-if not CONFIG['DEV_MODE'] and path.isfile(manifest_path):
+if not CONFIG['DEV_MODE']:
+    manifest_path = CONFIG['MANIFEST']
+    if not path.isfile(manifest_path):
+        raise RuntimeError(
+            f"The Vite manifest file does not exist at: {manifest_path}"
+        )
     try:
         manifest_file = open(manifest_path, "r")
         manifest_content = manifest_file.read()
@@ -39,6 +39,7 @@ if not CONFIG['DEV_MODE'] and path.isfile(manifest_path):
             f"Cannot read Vite manifest file at "
             f"{manifest_path} : {str(error)}"
         )
+    
 
 
 

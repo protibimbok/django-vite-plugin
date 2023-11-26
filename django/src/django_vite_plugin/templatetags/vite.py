@@ -8,7 +8,7 @@ register = template.Library()
 
 
 @register.tag()
-def vite(parser, token):
+def vite(_, token):
 
     bits:List[str] = token.split_contents()[1:]
 

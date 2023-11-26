@@ -1,3 +1,4 @@
+from pathlib import Path
 from django.conf import settings, global_settings
 
 
@@ -9,6 +10,7 @@ DEFAULT = {
     'WS_CLIENT': '@vite/client',
     'DEV_MODE': getattr(settings, 'DEBUG', global_settings.DEBUG),
     'BUILD_DIR': getattr(settings, 'STATIC_ROOT', global_settings.STATIC_ROOT) or getattr(settings, 'BASE_DIR') / 'static',
+    'MANIFEST': None,
     'BUILD_URL_PREFIX': getattr(settings, 'STATIC_URL', global_settings.STATIC_URL), # Production asset urls would be prefixed with this
     'SERVER': {
         'HTTPS': False,
@@ -28,7 +30,13 @@ DEFAULT = {
 
 def get_config() -> dict:
     config = getattr(settings, 'DJANGO_VITE_PLUGIN', None)
-    return _deep_copy(config, DEFAULT)
+    config = _deep_copy(config, DEFAULT)
+    if config['MANIFEST'] is None:
+        build_dir = Path(config['BUILD_DIR']) if isinstance(config['BUILD_DIR'], str) else config['BUILD_DIR']
+        config['MANIFEST'] = build_dir / '.vite' / 'manifest.json'
+    elif isinstance(config['MANIFEST'], str):
+        config['MANIFEST'] = Path(config['MANIFEST'])
+    return config
 
 
 def _deep_copy(config, default):

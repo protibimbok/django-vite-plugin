@@ -6,13 +6,6 @@ import django
 from ...config_helper import get_config
 from ...utils import find_asset
 import json
-import pathlib
-
-CONFIG = get_config()
-if isinstance(CONFIG["BUILD_DIR"], str):
-    CONFIG["BUILD_DIR"] = CONFIG["BUILD_DIR"].strip("/\\")
-elif isinstance(CONFIG["BUILD_DIR"], pathlib.Path):
-    CONFIG["BUILD_DIR"] = str(CONFIG["BUILD_DIR"])
 
 
 class Command(BaseCommand):
@@ -33,10 +26,7 @@ class Command(BaseCommand):
 
     def handle(self, **options: Any) -> None:
         if options['action'] == 'config':
-            CONFIG['INSTALLED_APPS'] = self.get_apps()
-            self.stdout.write(
-                json.dumps(CONFIG)
-            )
+            self.print_config()
         elif options['action'] == 'version':
             self.stdout.write(
                 json.dumps(django.get_version()),
@@ -59,5 +49,16 @@ class Command(BaseCommand):
             APPS[app] = apps.get_app_config(app).path
 
         return APPS
+    
 
-
+    def print_config(self):
+        CONFIG = get_config()
+        if isinstance(CONFIG["BUILD_DIR"], str):
+            CONFIG["BUILD_DIR"] = CONFIG["BUILD_DIR"].strip("/\\")
+        else:
+            CONFIG["BUILD_DIR"] = str(CONFIG["BUILD_DIR"])
+        CONFIG['MANIFEST'] = str(CONFIG['MANIFEST'])
+        CONFIG['INSTALLED_APPS'] = self.get_apps()
+        self.stdout.write(
+            json.dumps(CONFIG)
+        )
