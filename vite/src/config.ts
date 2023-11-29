@@ -135,12 +135,12 @@ export function resolveServerConfig(
               }
             : undefined
     return {
-        ...(front || {}),
         origin: `http${https ? 's' : ''}://${host}:${port}`,
         host,
         port,
         strictPort: true,
         https,
+        ...(front || {}),
     }
 }
 
