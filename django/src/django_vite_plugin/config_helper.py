@@ -24,7 +24,8 @@ DEFAULT = {
         'rel' : 'stylesheet',
         'type': 'text/css'
     },
-    'STATIC_LOOKUP': True
+    'STATIC_LOOKUP': True,
+    'HOT_FILE': None,
 }
 
 
@@ -36,6 +37,11 @@ def get_config() -> dict:
         config['MANIFEST'] = build_dir / '.vite' / 'manifest.json'
     elif isinstance(config['MANIFEST'], str):
         config['MANIFEST'] = Path(config['MANIFEST'])
+    
+    if config['HOT_FILE'] is None:
+        config['HOT_FILE'] = str(getattr(settings, 'BASE_DIR') / '.hotfile')
+    elif isinstance(config['HOT_FILE'], Path):
+        config['HOT_FILE'] = str(config['HOT_FILE'])
     return config
 
 

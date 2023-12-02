@@ -23,6 +23,7 @@ export interface AppConfig {
     }
     STATIC_LOOKUP: boolean
     INSTALLED_APPS: Record<string, string>
+    HOT_FILE: string
 }
 
 export interface PluginConfig {

@@ -1,7 +1,7 @@
 from typing import List, Dict
 from urllib.parse import urljoin
 from django import template
-from ..utils import CONFIG, get_from_manifest, get_html, find_asset, make_attrs
+from ..utils import CONFIG, get_from_manifest, get_html_dev, find_asset, make_attrs
 import copy
 
 register = template.Library()
@@ -126,11 +126,6 @@ def _make_attrs(attrs: Dict[str, str]) -> Dict[str, str]:
 
 def _make_asset(asset: str, attrs:Dict[str, str]):
     if CONFIG['DEV_MODE']:
-        url = urljoin(
-            f"{'https' if CONFIG['SERVER']['HTTPS'] else 'http'}://"
-            f"{CONFIG['SERVER']['HOST']}:{CONFIG['SERVER']['PORT']}",
-            asset,
-        )
-        return get_html(url, attrs)
+        return get_html_dev(asset, attrs)
 
     return get_from_manifest(asset, attrs)

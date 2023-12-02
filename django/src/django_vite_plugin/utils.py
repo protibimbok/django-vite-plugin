@@ -22,6 +22,7 @@ if CONFIG['DEV_MODE'] is False and 'JS_ATTRS_BUILD' in CONFIG:
     CONFIG['JS_ATTRS'] = CONFIG['JS_ATTRS_BUILD']
 
 VITE_MANIFEST  = {}
+DEV_SERVER = None
 
 if not CONFIG['DEV_MODE']:
     manifest_path = CONFIG['MANIFEST']
@@ -39,7 +40,6 @@ if not CONFIG['DEV_MODE']:
             f"Cannot read Vite manifest file at "
             f"{manifest_path} : {str(error)}"
         )
-    
 
 
 
@@ -119,6 +119,20 @@ def get_html(url: str, attrs: Dict[str, str]) -> str:
         return f'<link {attrs["css"]} href="{url}" />'
     else:
         return f'<script {attrs["js"]} src="{url}"></script>'
+    
+
+def get_html_dev(url: str, attrs: Dict[str, str]) -> str:
+    global DEV_SERVER
+    if DEV_SERVER is None:
+        try:
+            with open(CONFIG['HOT_FILE'], 'r') as hotfile:
+                DEV_SERVER = hotfile.read()
+        except:
+            raise Exception("Vite dev server is not started!")
+    if url.endswith('.css'):
+        return f'<link {attrs["css"]} href="{DEV_SERVER}/{url}" />'
+    else:
+        return f'<script {attrs["js"]} src="{DEV_SERVER}/{url}"></script>'
     
 
 
