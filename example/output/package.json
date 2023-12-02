@@ -4,7 +4,7 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "link:win": "cd ../vite && rmdir /s /q dist && tsc && copy \".\\src\\info.html\" \".\\dist\\\" && cd ../example && pnpm link ../vite"
+        "link:win": "cd ../../vite && rmdir /s /q dist && tsc && copy \".\\src\\info.html\" \".\\dist\\\" && cd ../example/output && pnpm link ../../vite"
     },
     "type": "module",
     "devDependencies": {
