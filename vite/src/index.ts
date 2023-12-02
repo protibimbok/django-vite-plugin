@@ -16,7 +16,6 @@ import {
     PluginConfig,
     resolveBuildConfig,
     resolvePluginConfig,
-    resolveServerConfig,
 } from './config.js'
 
 let DJANGO_VERSION = '...'
@@ -64,7 +63,6 @@ function djangoPlugin(config: InternalConfig): Plugin {
         name: 'django-vite-plugin',
         enforce: 'pre',
         config: (userConfig: UserConfig, { command }) => {
-            const server = resolveServerConfig(config, userConfig.server)
             const build = resolveBuildConfig(config, userConfig.build)
             userConfigG = userConfig;
 
@@ -74,7 +72,6 @@ function djangoPlugin(config: InternalConfig): Plugin {
                     command == 'build' ? config.appConfig.BUILD_URL_PREFIX : '',
                 root: userConfig.root || config.root || '.',
                 build,
-                server,
                 resolve: {
                     alias: Array.isArray(userConfig.resolve?.alias)
                         ? [
