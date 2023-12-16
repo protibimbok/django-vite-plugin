@@ -4,7 +4,7 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "link:w-py": "cmd /c mklink /j \".\\django_vite_plugin\" \"..\\..\\django\""
+        "link:w-py": "cmd /c mklink /j \".\\django_vite_plugin\" \"..\\..\\django\\src\\django_vite_plugin\""
     },
     "type": "module",
     "devDependencies": {
