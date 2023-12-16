@@ -1,0 +1,10 @@
+/node_modules/
+/dist/*
+/assets
+/npm-debug.log
+/package-lock.json
+/pnpm-lock.yaml
+/db.sqlite3
+/django_vite_plugin
+/django-vite-plugin
+.hotfile

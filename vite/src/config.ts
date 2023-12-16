@@ -8,13 +8,6 @@ export interface AppConfig {
     DEV_MODE: boolean
     BUILD_DIR: string
     BUILD_URL_PREFIX: string
-    SERVER: {
-        HTTPS: boolean
-        HOST: string
-        PORT: number
-        KEY?: string
-        CERT?: string
-    }
     JS_ATTRS: {
         [key: string]: string
     }
@@ -23,6 +16,7 @@ export interface AppConfig {
     }
     STATIC_LOOKUP: boolean
     INSTALLED_APPS: Record<string, string>
+    HOT_FILE: string
 }
 
 export interface PluginConfig {
@@ -120,29 +114,6 @@ export function resolveBuildConfig(
     }
 }
 
-export function resolveServerConfig(
-    config: InternalConfig,
-    front?: ServerOptions,
-): ServerOptions {
-    const serverCfg = config.appConfig.SERVER
-    const host = serverCfg.HOST
-    const port = serverCfg.PORT
-    const https =
-        serverCfg.CERT && serverCfg.KEY
-            ? {
-                  key: fs.readFileSync(serverCfg.KEY),
-                  cert: fs.readFileSync(serverCfg.CERT),
-              }
-            : undefined
-    return {
-        ...(front || {}),
-        origin: `http${https ? 's' : ''}://${host}:${port}`,
-        host,
-        port,
-        strictPort: true,
-        https,
-    }
-}
 
 async function resolveFullReloadConfig(
     config: PluginConfig,

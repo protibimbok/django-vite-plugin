@@ -1,3 +1,4 @@
 venv
 venv-linux
 /**/__pycache__
+/**/node_modules

@@ -8,13 +8,14 @@ import {
     execPythonJSON,
     writeAliases,
     getAppAliases,
+    resolveDevServerUrl,
 } from './helpers.js'
 import {
+    DevServerUrl,
     InternalConfig,
     PluginConfig,
     resolveBuildConfig,
     resolvePluginConfig,
-    resolveServerConfig,
 } from './config.js'
 
 let DJANGO_VERSION = '...'
@@ -44,6 +45,8 @@ export async function djangoVitePlugin(
     ]
 }
 
+let exitHandlersBound  =false;
+
 function djangoPlugin(config: InternalConfig): Plugin {
     const defaultAliases: Record<string, string> = getAppAliases(
         config.appConfig,
@@ -53,12 +56,15 @@ function djangoPlugin(config: InternalConfig): Plugin {
         writeAliases(config, defaultAliases)
     }
 
+    let viteDevServerUrl: DevServerUrl;
+    let userConfigG: UserConfig;
+
     return {
         name: 'django-vite-plugin',
         enforce: 'pre',
         config: (userConfig: UserConfig, { command }) => {
-            const server = resolveServerConfig(config, userConfig.server)
             const build = resolveBuildConfig(config, userConfig.build)
+            userConfigG = userConfig;
 
             return {
                 ...userConfig,
@@ -66,7 +72,6 @@ function djangoPlugin(config: InternalConfig): Plugin {
                     command == 'build' ? config.appConfig.BUILD_URL_PREFIX : '',
                 root: userConfig.root || config.root || '.',
                 build,
-                server,
                 resolve: {
                     alias: Array.isArray(userConfig.resolve?.alias)
                         ? [
@@ -91,6 +96,8 @@ function djangoPlugin(config: InternalConfig): Plugin {
                     x: string | AddressInfo | null | undefined,
                 ): x is AddressInfo => typeof x === 'object'
                 if (isAddressInfo(address)) {
+                    viteDevServerUrl = resolveDevServerUrl(address, server.config, userConfigG)
+                    fs.writeFileSync(config.appConfig.HOT_FILE, viteDevServerUrl)
                     setTimeout(() => {
                         server.config.logger.info(
                             `\n  ${colors.red(
@@ -101,6 +108,21 @@ function djangoPlugin(config: InternalConfig): Plugin {
                         )
                         server.config.logger.info('')
                     }, 100)
+
+                    if (! exitHandlersBound) {
+                        const clean = () => {
+                            if (fs.existsSync(config.appConfig.HOT_FILE)) {
+                                fs.rmSync(config.appConfig.HOT_FILE)
+                            }
+                        }
+        
+                        process.on('exit', clean)
+                        process.on('SIGINT', process.exit)
+                        process.on('SIGTERM', process.exit)
+                        process.on('SIGHUP', process.exit)
+        
+                        exitHandlersBound = true
+                    }
                 }
             })
 

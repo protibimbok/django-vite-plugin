@@ -1,8 +1,9 @@
 import { spawn } from 'child_process'
 import fs from 'fs'
 import path from 'path'
-import { normalizePath } from 'vite'
-import type { AppConfig, InternalConfig, PluginConfig } from './config.js'
+import { ResolvedConfig, UserConfig, normalizePath } from 'vite'
+import type { AppConfig, DevServerUrl, InternalConfig, PluginConfig } from './config.js'
+import { AddressInfo } from 'net'
 
 export function execPythonNoErr(
     args: string[],
@@ -156,4 +157,30 @@ export function getAppAliases(appConfig: AppConfig): Record<string, string> {
         aliases[`@t:${app}`] = normalizePath(`${apps[app]}/templates${trail}`)
     }
     return aliases
+}
+
+
+export function resolveDevServerUrl(address: AddressInfo, config: ResolvedConfig, _userConfig: UserConfig): DevServerUrl {
+    const configHmrProtocol = typeof config.server.hmr === 'object' ? config.server.hmr.protocol : null
+    const clientProtocol = configHmrProtocol ? (configHmrProtocol === 'wss' ? 'https' : 'http') : null
+    const serverProtocol = config.server.https ? 'https' : 'http'
+    const protocol = clientProtocol ?? serverProtocol
+
+    const configHmrHost = typeof config.server.hmr === 'object' ? config.server.hmr.host : null
+    const configHost = typeof config.server.host === 'string' ? config.server.host : null
+    const serverAddress = isIpv6(address) ? `[${address.address}]` : address.address
+    const host = configHmrHost ?? configHost ?? serverAddress
+
+    const configHmrClientPort = typeof config.server.hmr === 'object' ? config.server.hmr.clientPort : null
+    const port = configHmrClientPort ?? address.port
+
+    return `${protocol}://${host}:${port}`
+}
+function isIpv6(address: AddressInfo): boolean {
+    return address.family === 'IPv6'
+        // In node >=18.0 <18.4 this was an integer value. This was changed in a minor version.
+        // See: https://github.com/laravel/vite-plugin/issues/103
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore-next-line
+        || address.family === 6;
 }

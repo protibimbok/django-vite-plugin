@@ -1,3 +1,5 @@
+We stand with Palestine  against the ongoing [genocide](https://twitter.com/A_Abdelrahman0/status/1720100566368743555) and brutal [occupation](https://twitter.com/A_Abdelrahman0/status/1732448343639327122).
+
 # Django Vite Plugin
 
 [![PyPI version](https://badge.fury.io/py/django-vite-plugin.svg)](https://badge.fury.io/py/django-vite-plugin)
@@ -158,11 +160,6 @@ DJANGO_VITE_PLUGIN = {
     'BUILD_DIR': getattr(settings, 'STATIC_ROOT') or 'static',
     'MANIFEST': '<BUILD_DIR>/.vite/manifest.json',
     'BUILD_URL_PREFIX': getattr(settings, 'STATIC_URL'),
-    'SERVER': {
-        'HTTPS': False,
-        'HOST': '127.0.0.1',
-        'PORT': 5173
-    },
     'JS_ATTRS': {
         'type': 'module'
     },
@@ -207,13 +204,6 @@ DJANGO_VITE_PLUGIN = {
         'type': 'text/css'
     }
     ```
-
-- `SERVER`: The configuration for vite dev server is provided here
-    - `HTTPS`: Whether to use secure http connection. If you want to enable https, provide ssl `key` & `cert` here as `{'CERT': '<certificate.cert>', 'KEY':'<ssl_key>'}` (default: `False`)
-
-    - `HOST` : Vite dev server host (default: `127.0.0.1`)
-
-    - `PORT` : Vite dev server port (default: `5173`)
 
 ### Javascript
 The available js configuration options are:
