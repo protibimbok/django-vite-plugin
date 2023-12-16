@@ -1,3 +1,5 @@
+We stand with Palestine  against the ongoing [genocide](https://twitter.com/A_Abdelrahman0/status/1720100566368743555) and brutal [occupation](https://twitter.com/A_Abdelrahman0/status/1732448343639327122).
+
 # Django Vite Plugin
 
 [![PyPI version](https://badge.fury.io/py/django-vite-plugin.svg)](https://badge.fury.io/py/django-vite-plugin)
