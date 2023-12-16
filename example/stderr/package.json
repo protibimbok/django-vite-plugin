@@ -1,0 +1,17 @@
+{
+    "private": true,
+    "version": "0.0.1",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "link:w-py": "cmd /c mklink /j \".\\django_vite_plugin\" \"..\\..\\django\""
+    },
+    "type": "module",
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^4.5.0",
+        "django-vite-plugin": "file:../../vite"
+    },
+    "dependencies": {
+        "vite": "^5.0.2"
+    }
+}
