@@ -2,7 +2,15 @@ import { spawn } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import { ResolvedConfig, UserConfig, normalizePath } from 'vite'
-import type { AppConfig, DevServerUrl, InternalConfig, PluginConfig } from './config.js'
+
+import { parse, modify, applyEdits } from 'jsonc-parser'
+
+import type {
+    AppConfig,
+    DevServerUrl,
+    InternalConfig,
+    PluginConfig,
+} from './config.js'
 import { AddressInfo } from 'net'
 
 export function execPythonNoErr(
@@ -37,12 +45,12 @@ export async function execPythonJSON(
 ): Promise<any> {
     const [res, err] = await execPythonNoErr(args, config)
     try {
-        return JSON.parse(res);
+        return JSON.parse(res)
     } catch (error) {
         if (err) {
-            throw new Error(err);
+            throw new Error(err)
         } else {
-            throw error;
+            throw error
         }
     }
 }
@@ -74,33 +82,58 @@ export async function addStaticToInputs(
     )
 }
 
-export async function writeAliases(
+const getJsOrTsConfigPath = (
     config: InternalConfig,
-    aliases: Record<string, string>,
-) {
+    js: boolean = false,
+): { root: string; cfgPath: string } | undefined => {
     let root = process.cwd()
     if (config.root) {
         root = path.join(root, config.root)
     }
-    let jsconfigPath = path.join(root, 'jsconfig.json')
-
-    if (!fs.existsSync(jsconfigPath)) {
+    const fileName = js ? 'jsconfig.json' : 'tsconfig.json'
+    let cfgPath = path.join(root, fileName)
+    if (!fs.existsSync(cfgPath)) {
         if (!config.root) {
+            if (!js) {
+                return getJsOrTsConfigPath(config, true)
+            }
             return
         }
         root = process.cwd()
-        jsconfigPath = path.join(root, 'jsconfig.json')
-        if (!fs.existsSync(jsconfigPath)) {
+        cfgPath = path.join(root, fileName)
+        if (!fs.existsSync(cfgPath)) {
+            if (!js) {
+                return getJsOrTsConfigPath(config, true)
+            }
             return
         }
     }
+    return { root, cfgPath }
+}
 
-    let updated = false
+export async function writeAliases(
+    config: InternalConfig,
+    aliases: Record<string, string>,
+) {
+    const cfgOpts = getJsOrTsConfigPath(config)
+    if (!cfgOpts) {
+        return
+    }
 
-    const jsconfig = JSON.parse(fs.readFileSync(jsconfigPath, 'utf8'))
+    const { root, cfgPath } = cfgOpts
 
-    jsconfig.compilerOptions = jsconfig.compilerOptions || {}
-    const old = jsconfig.compilerOptions.paths || {}
+    const fileContent = fs.readFileSync(cfgPath, 'utf8')
+
+    const jsonNode = parse(fileContent, [], { disallowComments: false })
+    const old = jsonNode.compilerOptions?.paths || {}
+
+    const updatedPaths: Record<string, string[]> = {}
+
+    for (const alias in old) {
+        if (!alias.startsWith('@s:') && !alias.startsWith('@t:')) {
+            updatedPaths[alias] = old[alias]
+        }
+    }
 
     for (let alias in aliases) {
         let val = normalizePath(path.relative(root, aliases[alias]))
@@ -109,16 +142,25 @@ export async function writeAliases(
         }
         val += '/*'
         alias += '/*'
-        if (!old[alias] || old[alias].indexOf(val) == -1) {
-            updated = true
-            old[alias] = [val]
-        }
+        updatedPaths[alias] = [val]
     }
 
-    if (updated) {
-        jsconfig.compilerOptions.paths = old
-        fs.writeFileSync(jsconfigPath, JSON.stringify(jsconfig, null, 2))
-    }
+    const edits = modify(
+        fileContent,
+        ['compilerOptions', 'paths'],
+        updatedPaths,
+        {
+            formattingOptions: {
+                tabSize: 2,
+                insertSpaces: true,
+                keepLines: true,
+            },
+        },
+    )
+
+    const newContent = applyEdits(fileContent, edits)
+
+    fs.writeFileSync(cfgPath, newContent, 'utf-8')
 }
 
 export function createJsConfig(config: InternalConfig) {
@@ -159,28 +201,47 @@ export function getAppAliases(appConfig: AppConfig): Record<string, string> {
     return aliases
 }
 
-
-export function resolveDevServerUrl(address: AddressInfo, config: ResolvedConfig, _userConfig: UserConfig): DevServerUrl {
-    const configHmrProtocol = typeof config.server.hmr === 'object' ? config.server.hmr.protocol : null
-    const clientProtocol = configHmrProtocol ? (configHmrProtocol === 'wss' ? 'https' : 'http') : null
+export function resolveDevServerUrl(
+    address: AddressInfo,
+    config: ResolvedConfig,
+    _userConfig: UserConfig,
+): DevServerUrl {
+    const configHmrProtocol =
+        typeof config.server.hmr === 'object'
+            ? config.server.hmr.protocol
+            : null
+    const clientProtocol = configHmrProtocol
+        ? configHmrProtocol === 'wss'
+            ? 'https'
+            : 'http'
+        : null
     const serverProtocol = config.server.https ? 'https' : 'http'
     const protocol = clientProtocol ?? serverProtocol
 
-    const configHmrHost = typeof config.server.hmr === 'object' ? config.server.hmr.host : null
-    const configHost = typeof config.server.host === 'string' ? config.server.host : null
-    const serverAddress = isIpv6(address) ? `[${address.address}]` : address.address
+    const configHmrHost =
+        typeof config.server.hmr === 'object' ? config.server.hmr.host : null
+    const configHost =
+        typeof config.server.host === 'string' ? config.server.host : null
+    const serverAddress = isIpv6(address)
+        ? `[${address.address}]`
+        : address.address
     const host = configHmrHost ?? configHost ?? serverAddress
 
-    const configHmrClientPort = typeof config.server.hmr === 'object' ? config.server.hmr.clientPort : null
+    const configHmrClientPort =
+        typeof config.server.hmr === 'object'
+            ? config.server.hmr.clientPort
+            : null
     const port = configHmrClientPort ?? address.port
 
     return `${protocol}://${host}:${port}`
 }
 function isIpv6(address: AddressInfo): boolean {
-    return address.family === 'IPv6'
+    return (
+        address.family === 'IPv6' ||
         // In node >=18.0 <18.4 this was an integer value. This was changed in a minor version.
         // See: https://github.com/laravel/vite-plugin/issues/103
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore-next-line
-        || address.family === 6;
+        address.family === 6
+    )
 }
