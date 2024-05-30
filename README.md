@@ -350,6 +350,8 @@ You can get autocompletions for these import aliases in the IDEs that support `j
 
 To enable this feature, add a `jsconfig.json` file in your projects root directory or in the same directory as `vite.config.js`
 
+__Note: If you are using typescript then it will automatically add the paths there while running dev command__
+
 ### 6. Test for production
 
 Do this to test if your build files works as expected before shipping it to the production
