@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       django-vite-plugin:
-        specifier: ^4.0.0
-        version: 4.0.0(vite@5.2.12)
+        specifier: file:../../vite
+        version: file:../../vite(vite@5.2.12)
       typescript:
         specifier: ^5.2.2
         version: 5.4.5
@@ -282,8 +282,8 @@ packages:
     resolution: {integrity: sha512-iRDPJKUPVEND7dHPO8rkbOnPpyDygcDFtWjpeWNCgy8WP2rXcxXL8TskReQl6OrB2G7+UJrags1q15Fudc7G6w==}
     engines: {node: '>= 8'}
 
-  django-vite-plugin@4.0.0:
-    resolution: {integrity: sha512-XCFBF5gfZJSf3+mWugqLt14USKXClAVHpPJTDlI2VnM618bG78jLmTItzZx0vHhfPNJvoTCIj6ayr+upyZ8UQA==}
+  django-vite-plugin@file:../../vite:
+    resolution: {directory: ../../vite, type: directory}
     engines: {node: '>=14'}
     peerDependencies:
       vite: ^3.0.0 || ^4.0.0 || ^5.0.0
@@ -326,6 +326,9 @@ packages:
   jackspeak@3.1.2:
     resolution: {integrity: sha512-kWmLKn2tRtfYMF/BakihVVRzBKOxz4gJMiL2Rj91WnAB5TPZumSH99R/Yf1qE1u4uRimvCSJfm6hnxohXeEXjQ==}
     engines: {node: '>=14'}
+
+  jsonc-parser@3.2.1:
+    resolution: {integrity: sha512-AilxAyFOAcK5wA1+LeaySVBrHsGQvUFCDWXKpZjzaL0PqW+xfBOttn8GNtWKFWqneyMZj41MWF9Kl6iPWLwgOA==}
 
   lru-cache@10.2.2:
     resolution: {integrity: sha512-9hp3Vp2/hFQUiIwKo8XCeFVnrg8Pk3TYNPIR7tJADKi5YfcF7vEaK7avFHTlSy3kOKYaJQaalfEo6YuXdceBOQ==}
@@ -603,9 +606,10 @@ snapshots:
       shebang-command: 2.0.0
       which: 2.0.2
 
-  django-vite-plugin@4.0.0(vite@5.2.12):
+  django-vite-plugin@file:../../vite(vite@5.2.12):
     dependencies:
       glob: 10.4.1
+      jsonc-parser: 3.2.1
       picocolors: 1.0.1
       vite: 5.2.12
 
@@ -666,6 +670,8 @@ snapshots:
       '@isaacs/cliui': 8.0.2
     optionalDependencies:
       '@pkgjs/parseargs': 0.11.0
+
+  jsonc-parser@3.2.1: {}
 
   lru-cache@10.2.2: {}
 
