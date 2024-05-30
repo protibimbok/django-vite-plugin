@@ -16,7 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.shortcuts import render
+
+def homepage(req):
+    return render(req, 'index.html')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', homepage)
 ]

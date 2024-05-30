@@ -18,7 +18,26 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* django-vite-plugin */
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@s:app1/*": [
+        "./app1/static/app1/*"
+      ],
+      "@t:app1/*": [
+        "./app1/templates/app1/*"
+      ],
+      "@s:app2/*": [
+        "./app2/static/app2/*"
+      ],
+      "@t:app2/*": [
+        "./app2/templates/app2/*"
+      ]
+    }
   },
   "include": ["*/static/", "static/"],
   "exclude": ["node_modules", ".venv"]
