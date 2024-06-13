@@ -96,7 +96,7 @@ def _get_css_files(
     if 'imports' in manifest_entry:
         for import_path in manifest_entry['imports']:
             html += _get_css_files(
-                import_path,
+                VITE_MANIFEST[import_path],
                 attrs,
                 already_processed
             )
