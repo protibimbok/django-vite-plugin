@@ -88,9 +88,10 @@ def get_from_manifest(path: str, attrs: Dict[str, str]) -> str:
 def _get_css_files(
     manifest_entry: Dict[str, str],
     attrs: Dict[str, str],
-    already_processed: List[str] = []
+    already_processed = None
 ) -> str:
-
+    if already_processed is None:
+        already_processed = []
     html = ''
 
     if 'imports' in manifest_entry:
