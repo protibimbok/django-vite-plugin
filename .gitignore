@@ -1,4 +1,5 @@
+.venv
 venv
-venv-linux
+.venv-linux
 /**/__pycache__
 /**/node_modules
