@@ -1,10 +1,11 @@
-from typing import Dict, List
+from typing import Dict
 from os import path
 from django.conf import settings
 from django.contrib.staticfiles import finders
 from urllib.parse import urljoin
 from .config_helper import get_config
 import json
+import sys
 
 # Length of the root directory
 ROOT_DIR_LEN = len(str(getattr(settings, "BASE_DIR")))
@@ -24,7 +25,7 @@ if CONFIG['DEV_MODE'] is False and 'JS_ATTRS_BUILD' in CONFIG:
 VITE_MANIFEST  = {}
 DEV_SERVER = None
 
-if not CONFIG['DEV_MODE']:
+if not CONFIG['DEV_MODE'] and not (len(sys.argv) < 2 or sys.argv[1] != 'django_vite_plugin'):
     manifest_path = CONFIG['MANIFEST']
     if not path.isfile(manifest_path):
         raise RuntimeError(
