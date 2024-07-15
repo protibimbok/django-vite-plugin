@@ -25,7 +25,7 @@ if CONFIG['DEV_MODE'] is False and 'JS_ATTRS_BUILD' in CONFIG:
 VITE_MANIFEST  = {}
 DEV_SERVER = None
 
-if not CONFIG['DEV_MODE'] and not (len(sys.argv) < 2 or sys.argv[1] != 'django_vite_plugin'):
+if not CONFIG['DEV_MODE'] and (len(sys.argv) < 2 or sys.argv[1] != 'django_vite_plugin'):
     manifest_path = CONFIG['MANIFEST']
     if not path.isfile(manifest_path):
         raise RuntimeError(
