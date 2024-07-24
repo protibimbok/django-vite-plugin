@@ -47,7 +47,7 @@ class Command(BaseCommand):
             if '.' in name or name == 'django_vite_plugin':
                 continue
             APPS[name] = app_config.path
-    
+        return APPS
 
     def print_config(self):
         CONFIG = get_config()
