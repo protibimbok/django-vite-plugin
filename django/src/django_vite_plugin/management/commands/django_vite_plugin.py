@@ -40,15 +40,13 @@ class Command(BaseCommand):
             )
     
     def get_apps(self) -> Dict[str, str]:
-        INSTALLED_APPS = getattr(settings, 'INSTALLED_APPS', [])
-        APPS = {}
-        for app in INSTALLED_APPS:
-            # Ignore dotted named apps
-            if '.' in app or app == 'django_vite_plugin':
+        APPS= {}
+        app_configs = apps.get_app_configs()
+        for app_config in app_configs:
+            name = app_config.name
+            if '.' in name or name == 'django_vite_plugin':
                 continue
-            APPS[app] = apps.get_app_config(app).path
-
-        return APPS
+            APPS[name] = app_config.path
     
 
     def print_config(self):
