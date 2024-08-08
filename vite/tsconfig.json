@@ -1,8 +1,8 @@
 {
     "compilerOptions": {
-        "outDir": "./dist",
-        "target": "ES2019",
-        "module":"CommonJS",
+        "outDir": "./dist/esm",
+        "target": "es2022",
+        "module":"es2022",
         "moduleResolution": "node",
         "resolveJsonModule": true,
         "strict": true,
