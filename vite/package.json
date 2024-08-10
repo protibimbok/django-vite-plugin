@@ -2,6 +2,7 @@
     "name": "django-vite-plugin",
     "version": "4.0.1",
     "description": "Django plugin for Vite.",
+    "type": "module",
     "keywords": [
         "django",
         "vite",
@@ -17,14 +18,23 @@
         "name": "Sakibur Rahman Khan",
         "email": "sakib.saad.khan@gmail.com"
     },
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
+    "module": "./dist/esm/index.js",
+    "types": "./dist/esm/index.d.ts",
+    "main": "./dist/cjs/index.js",
+    "exports": {
+      "./package.json": "./package.json",
+      ".": {
+        "import": "./dist/esm/index.js",
+        "types": "./dist/esm/index.d.ts",
+        "require": "./dist/cjs/index.js"
+      }
+    },
     "files": [
-        "/dist"
+      "dist/**/*"
     ],
     "scripts": {
-        "build": "rm -rf dist && tsc && cp src/info.html dist/",
-        "build-win": "rmdir /s /q dist && tsc && copy \".\\src\\info.html\" \".\\dist\\\"",
+        "build": "rm -rf dist && tsc && tsc -t es2019 -m commonjs -d false --outDir dist/cjs && cp src/info.html dist/esm/ && cp src/info.html dist/cjs/ && cp src/package-esm.json dist/esm/package.json && cp src/package-cjs.json dist/cjs/package.json",
+        "build-win": "rmdir /s /q dist && tsc && tsc -t es2019 -m commonjs -d false --declarationDir null --outDir dist\\cjs && copy \".\\src\\info.html\" \".\\dist\\esm\\\" && copy \".\\src\\info.html\" \".\\dist\\cjs\\\" && copy \".\\src\\package-esm.json\" \".\\dist\\esm\\package.json\" && copy \".\\src\\package-cjs.json\" \".\\dist\\cjs\\package.json\"",
         "lint": "eslint --ext .ts ./src"
     },
     "devDependencies": {
@@ -32,6 +42,7 @@
         "@typescript-eslint/eslint-plugin": "^5.62.0",
         "@typescript-eslint/parser": "^5.62.0",
         "prettier": "^3.2.5",
+        "tsc": "^2.0.4",
         "typescript": "^4.9.5",
         "vite": "^4.5.3"
     },
