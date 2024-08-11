@@ -1,5 +1,4 @@
 from typing import Dict
-from os import path
 from django.conf import settings
 from django.contrib.staticfiles import finders
 from urllib.parse import urljoin
@@ -27,20 +26,13 @@ DEV_SERVER = None
 
 if not CONFIG['DEV_MODE']:
     manifest_path = CONFIG['MANIFEST']
-    if not path.isfile(manifest_path):
+    try:
+        with open(manifest_path, "r") as manifest_file:
+            VITE_MANIFEST = json.load(manifest_file)
+    except FileNotFoundError:
         sys.stderr.write(f"Cannot read Vite manifest file at {manifest_path}\n")
-    else:
-        try:
-            manifest_file = open(manifest_path, "r")
-            manifest_content = manifest_file.read()
-            manifest_file.close()
-            VITE_MANIFEST = json.loads(manifest_content)
-        except Exception as error:
-            raise RuntimeError(
-                f"Cannot read Vite manifest file at "
-                f"{manifest_path} : {str(error)}"
-            )
-
+    except Exception as error:
+        raise RuntimeError(f"Cannot read Vite manifest file at {manifest_path}: {error}")
 
 
 def make_attrs(attrs: Dict[str, any]):
