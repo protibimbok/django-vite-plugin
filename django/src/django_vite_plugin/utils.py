@@ -25,22 +25,21 @@ if CONFIG['DEV_MODE'] is False and 'JS_ATTRS_BUILD' in CONFIG:
 VITE_MANIFEST  = {}
 DEV_SERVER = None
 
-if not CONFIG['DEV_MODE'] and (len(sys.argv) < 2 or sys.argv[1] != 'django_vite_plugin'):
+if not CONFIG['DEV_MODE']:
     manifest_path = CONFIG['MANIFEST']
     if not path.isfile(manifest_path):
-        raise RuntimeError(
-            f"The Vite manifest file does not exist at: {manifest_path}"
-        )
-    try:
-        manifest_file = open(manifest_path, "r")
-        manifest_content = manifest_file.read()
-        manifest_file.close()
-        VITE_MANIFEST = json.loads(manifest_content)
-    except Exception as error:
-        raise RuntimeError(
-            f"Cannot read Vite manifest file at "
-            f"{manifest_path} : {str(error)}"
-        )
+        sys.stderr.write(f"Cannot read Vite manifest file at {manifest_path}\n")
+    else:
+        try:
+            manifest_file = open(manifest_path, "r")
+            manifest_content = manifest_file.read()
+            manifest_file.close()
+            VITE_MANIFEST = json.loads(manifest_content)
+        except Exception as error:
+            raise RuntimeError(
+                f"Cannot read Vite manifest file at "
+                f"{manifest_path} : {str(error)}"
+            )
 
 
 
