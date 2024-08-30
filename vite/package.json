@@ -33,8 +33,8 @@
         "dist/**/*"
     ],
     "scripts": {
-        "build": "rm -rf dist && pnpm tsc && pnpm tsc -t es2019 -m commonjs -d false --outDir dist/cjs && cp src/info.html dist/esm/ && cp src/info.html dist/cjs/ && cp src/package-esm.json dist/esm/package.json && cp src/package-cjs.json dist/cjs/package.json",
-        "build-win": "rmdir /s /q dist && pnpm tsc && pnpm tsc -t es2019 -m commonjs -d false --declarationDir null --outDir dist\\cjs && copy \".\\src\\info.html\" \".\\dist\\esm\\\" && copy \".\\src\\info.html\" \".\\dist\\cjs\\\" && copy \".\\src\\package-esm.json\" \".\\dist\\esm\\package.json\" && copy \".\\src\\package-cjs.json\" \".\\dist\\cjs\\package.json\"",
+        "build": "rm -rf dist && pnpm exec tsc && pnpm exec tsc -t es2019 -m commonjs -d false --outDir dist/cjs && cp src/info.html dist/esm/ && cp src/info.html dist/cjs/ && cp src/package-esm.json dist/esm/package.json && cp src/package-cjs.json dist/cjs/package.json",
+        "build-win": "rmdir /s /q dist && pnpm exec tsc && pnpm exec tsc -t es2019 -m commonjs -d false --declarationDir null --outDir dist\\cjs && copy \".\\src\\info.html\" \".\\dist\\esm\\\" && copy \".\\src\\info.html\" \".\\dist\\cjs\\\" && copy \".\\src\\package-esm.json\" \".\\dist\\esm\\package.json\" && copy \".\\src\\package-cjs.json\" \".\\dist\\cjs\\package.json\"",
         "lint": "eslint --ext .ts ./src"
     },
     "devDependencies": {
