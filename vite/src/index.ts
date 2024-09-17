@@ -20,6 +20,11 @@ import {
 
 let DJANGO_VERSION = '...'
 
+const THIS_DIR: string =
+    typeof __dirname === 'undefined'
+        ? path.dirname(new URL(import.meta.url).pathname)
+        : __dirname
+
 export async function djangoVitePlugin(
     config: PluginConfig | string | string[],
 ): Promise<Plugin[]> {
@@ -45,7 +50,7 @@ export async function djangoVitePlugin(
     ]
 }
 
-let exitHandlersBound  =false;
+let exitHandlersBound = false
 
 function djangoPlugin(config: InternalConfig): Plugin {
     const defaultAliases: Record<string, string> = getAppAliases(
@@ -56,15 +61,15 @@ function djangoPlugin(config: InternalConfig): Plugin {
         writeAliases(config, defaultAliases)
     }
 
-    let viteDevServerUrl: DevServerUrl;
-    let userConfigG: UserConfig;
+    let viteDevServerUrl: DevServerUrl
+    let userConfigG: UserConfig
 
     return {
         name: 'django-vite-plugin',
         enforce: 'pre',
         config: (userConfig: UserConfig, { command }) => {
             const build = resolveBuildConfig(config, userConfig.build)
-            userConfigG = userConfig;
+            userConfigG = userConfig
 
             return {
                 ...userConfig,
@@ -96,8 +101,15 @@ function djangoPlugin(config: InternalConfig): Plugin {
                     x: string | AddressInfo | null | undefined,
                 ): x is AddressInfo => typeof x === 'object'
                 if (isAddressInfo(address)) {
-                    viteDevServerUrl = resolveDevServerUrl(address, server.config, userConfigG)
-                    fs.writeFileSync(config.appConfig.HOT_FILE, viteDevServerUrl)
+                    viteDevServerUrl = resolveDevServerUrl(
+                        address,
+                        server.config,
+                        userConfigG,
+                    )
+                    fs.writeFileSync(
+                        config.appConfig.HOT_FILE,
+                        viteDevServerUrl,
+                    )
                     setTimeout(() => {
                         server.config.logger.info(
                             `\n  ${colors.red(
@@ -109,18 +121,18 @@ function djangoPlugin(config: InternalConfig): Plugin {
                         server.config.logger.info('')
                     }, 100)
 
-                    if (! exitHandlersBound) {
+                    if (!exitHandlersBound) {
                         const clean = () => {
                             if (fs.existsSync(config.appConfig.HOT_FILE)) {
                                 fs.rmSync(config.appConfig.HOT_FILE)
                             }
                         }
-        
+
                         process.on('exit', clean)
                         process.on('SIGINT', process.exit)
                         process.on('SIGTERM', process.exit)
                         process.on('SIGHUP', process.exit)
-        
+
                         exitHandlersBound = true
                     }
                 }
@@ -132,7 +144,7 @@ function djangoPlugin(config: InternalConfig): Plugin {
                         res.statusCode = 404
                         res.end(
                             fs
-                                .readFileSync(path.join(__dirname, 'info.html'))
+                                .readFileSync(path.join(THIS_DIR, 'info.html'))
                                 .toString(),
                         )
                     }
