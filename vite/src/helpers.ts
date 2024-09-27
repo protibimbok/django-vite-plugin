@@ -13,6 +13,13 @@ import type {
 } from './config.js'
 import { AddressInfo } from 'net'
 
+const BASE_DIR: string = path.dirname(
+    typeof __dirname === 'undefined'
+        ? // @ts-ignore
+          path.dirname(new URL(import.meta.url).pathname)
+        : __dirname,
+)
+
 export function execPythonNoErr(
     args: string[],
     config: PluginConfig,
@@ -58,7 +65,7 @@ export async function execPythonJSON(
 export function pluginVersion(): string {
     try {
         return JSON.parse(
-            fs.readFileSync(path.join(__dirname, '../package.json')).toString(),
+            fs.readFileSync(path.join(BASE_DIR, '/package.json')).toString(),
         )?.version
     } catch {
         return ''
