@@ -15,7 +15,8 @@ import { AddressInfo } from 'net'
 
 const BASE_DIR: string = path.dirname(
     typeof __dirname === 'undefined'
-        ? path.dirname(new URL(import.meta.url).pathname)
+        ? // @ts-ignore
+          path.dirname(new URL(import.meta.url).pathname)
         : __dirname,
 )
 

@@ -22,7 +22,8 @@ let DJANGO_VERSION = '...'
 
 const THIS_DIR: string =
     typeof __dirname === 'undefined'
-        ? path.dirname(new URL(import.meta.url).pathname)
+        ? // @ts-ignore
+          path.dirname(new URL(import.meta.url).pathname)
         : __dirname
 
 export async function djangoVitePlugin(
