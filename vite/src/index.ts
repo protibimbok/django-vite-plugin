@@ -9,6 +9,7 @@ import {
     writeAliases,
     getAppAliases,
     resolveDevServerUrl,
+    getAbsolutePathFromMetaUrl,
 } from './helpers.js'
 import {
     DevServerUrl,
@@ -20,11 +21,12 @@ import {
 
 let DJANGO_VERSION = '...'
 
-const THIS_DIR: string =
+const THIS_DIR: string = getAbsolutePathFromMetaUrl(
     typeof __dirname === 'undefined'
         ? // @ts-ignore
           path.dirname(new URL(import.meta.url).pathname)
-        : __dirname
+        : __dirname,
+)
 
 export async function djangoVitePlugin(
     config: PluginConfig | string | string[],
