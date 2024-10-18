@@ -25,6 +25,7 @@ jobs:
           version: 9
 
       - name: Install dependencies
+        working-directory: vite
         run: pnpm install
 
       - name: Build and Publish
