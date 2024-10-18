@@ -1,6 +1,3 @@
-# This workflow will run tests using node and then publish a package to GitHub Packages when a release is created
-# For more information see: https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages
-
 name: Publish Package to npm
 
 on:
@@ -11,22 +8,28 @@ jobs:
   publish-npm:
     if: endsWith(github.ref, '-npm')
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: 20
-          registry-url: https://registry.npmjs.org/
-      
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org/"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
       - name: Install dependencies
-        run: |
-          npm install -g pnpm
-          npm install -g typescript
+        run: pnpm install
 
       - name: Build and Publish
         working-directory: vite
         run: |
-          pnpm install
           pnpm build
           pnpm publish --no-git-checks
         env:
