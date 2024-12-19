@@ -34,7 +34,7 @@ def get_config() -> dict:
         config['MANIFEST'] = Path(config['MANIFEST'])
     
     if config['HOT_FILE'] is None:
-        config['HOT_FILE'] = str(getattr(settings, 'BASE_DIR') / '.hotfile')
+        config['HOT_FILE'] = str(Path(getattr(settings, 'BASE_DIR')) / '.hotfile')
     elif isinstance(config['HOT_FILE'], Path):
         config['HOT_FILE'] = str(config['HOT_FILE'])
     return config
