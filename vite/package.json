@@ -33,8 +33,7 @@
         "dist/**/*"
     ],
     "scripts": {
-        "build": "rm -rf dist && tsc && tsc -t es2019 -m commonjs -d false --outDir dist/cjs && cp src/info.html dist/esm/ && cp src/info.html dist/cjs/ && cp src/package-esm.json dist/esm/package.json && cp src/package-cjs.json dist/cjs/package.json",
-        "build-win": "rmdir /s /q dist && tsc && tsc -t es2019 -m commonjs -d false --declarationDir null --outDir dist\\cjs && copy \".\\src\\info.html\" \".\\dist\\esm\\\" && copy \".\\src\\info.html\" \".\\dist\\cjs\\\" && copy \".\\src\\package-esm.json\" \".\\dist\\esm\\package.json\" && copy \".\\src\\package-cjs.json\" \".\\dist\\cjs\\package.json\"",
+        "build": "node --experimental-strip-types ./script/build.ts",
         "lint": "eslint --ext .ts ./src"
     },
     "devDependencies": {
@@ -47,7 +46,7 @@
         "vite": "^4.5.3"
     },
     "peerDependencies": {
-        "vite": "^3.0.0 || ^4.0.0 || ^5.0.0"
+        "vite": "^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0"
     },
     "engines": {
         "node": ">=14"
