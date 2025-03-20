@@ -23,7 +23,7 @@ INSTALLED_APPS = [
 ]
 ```
 These are the available configuration options
-```pyhton
+```python
 # Other settings
 DJANGO_VITE_PLUGIN = {
     'WS_CLIENT': '@vite/client',
