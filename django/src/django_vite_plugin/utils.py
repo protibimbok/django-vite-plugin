@@ -122,8 +122,18 @@ def get_html_dev(url: str, attrs: Dict[str, str]) -> str:
                 DEV_SERVER = hotfile.read()
         except:
             raise Exception("Vite dev server is not started!")
-    if url.endswith('.css'):
+    if url.endswith(('.css', '.scss', '.sass', '.less')):
         return f'<link {attrs["css"]} href="{DEV_SERVER}/{url}" />'
+    elif url == 'react':
+        return f"""
+        <script type="module">
+        import RefreshRuntime from "{DEV_SERVER}/@react-refresh"
+        RefreshRuntime.injectIntoGlobalHook(window)
+        window.$RefreshReg$ = () => {{}}
+        window.$RefreshSig$ = () => (type) => type
+        window.__vite_plugin_react_preamble_installed__ = true
+        </script>
+        """
     else:
         return f'<script {attrs["js"]} src="{DEV_SERVER}/{url}"></script>'
     

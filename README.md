@@ -103,6 +103,23 @@ To include these files your Template file would look like:
 ```
 > Notice instead of using `home/static/home/*/*`, we have used `home/*/*`. By default `django_vite_plugin` adds `static/<app_name>` after first segment of the path. This behaviour can be changed from settings
 
+#### With React
+To use this with react include this in your template file
+```django
+<head>
+    <!--Other elements-->
+    {% vite 'react' %} <!-- This line -->
+    {% vite 'home/css/styles.css' 'home/js/main.js' %}
+</head>
+```
+or you may combine `react` with other inputs too
+```django
+<head>
+    <!--Other elements-->s
+    {% vite 'react' 'home/css/styles.css' 'home/js/main.js' %}
+</head>
+```
+
 ### Vite
 
 In your `vite.config.js` file add `django-vite-plugin`
