@@ -6,7 +6,6 @@ on:
 
 jobs:
   publish-npm:
-    if: endsWith(github.ref, '-npm')
     runs-on: ubuntu-latest
 
     steps:

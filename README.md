@@ -115,7 +115,7 @@ To use this with react include this in your template file
 or you may combine `react` with other inputs too
 ```django
 <head>
-    <!--Other elements-->s
+    <!--Other elements-->
     {% vite 'react' 'home/css/styles.css' 'home/js/main.js' %}
 </head>
 ```
