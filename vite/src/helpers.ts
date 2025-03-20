@@ -13,7 +13,6 @@ import type {
 } from './config.js'
 import { AddressInfo } from 'net'
 
-
 export function getAbsolutePathFromMetaUrl(path: string): string {
     if (process.platform === 'win32' && path.startsWith('/')) {
         return path.substring(1)
@@ -29,7 +28,6 @@ const BASE_DIR: string = path.dirname(
             : __dirname,
     ),
 )
-
 
 export function execPythonNoErr(
     args: string[],
@@ -102,31 +100,28 @@ export async function addStaticToInputs(
 
 const getJsOrTsConfigPath = (
     config: InternalConfig,
-    js: boolean = false,
 ): { root: string; cfgPath: string } | undefined => {
-    let root = process.cwd()
-    if (config.root) {
-        root = path.join(root, config.root)
-    }
-    const fileName = js ? 'jsconfig.json' : 'tsconfig.json'
-    let cfgPath = path.join(root, fileName)
-    if (!fs.existsSync(cfgPath)) {
-        if (!config.root) {
-            if (!js) {
-                return getJsOrTsConfigPath(config, true)
+    const cwd = process.cwd()
+    const withRoot = config.root ? path.join(cwd, config.root) : undefined
+
+    // Try configs in order: tsconfig.app.json, tsconfig.json, jsconfig.json
+    const configFiles = ['tsconfig.app.json', 'tsconfig.json', 'jsconfig.json']
+
+    for (const fileName of configFiles) {
+        if (withRoot) {
+            const cfgPath = path.join(withRoot, fileName)
+            if (fs.existsSync(cfgPath)) {
+                return { root: withRoot, cfgPath }
             }
-            return
         }
-        root = process.cwd()
-        cfgPath = path.join(root, fileName)
-        if (!fs.existsSync(cfgPath)) {
-            if (!js) {
-                return getJsOrTsConfigPath(config, true)
-            }
-            return
+
+        const cfgPath = path.join(cwd, fileName)
+        if (fs.existsSync(cfgPath)) {
+            return { root: cwd, cfgPath }
         }
     }
-    return { root, cfgPath }
+
+    return undefined
 }
 
 export async function writeAliases(
