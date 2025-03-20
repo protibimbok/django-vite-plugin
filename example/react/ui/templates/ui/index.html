@@ -1,0 +1,14 @@
+{% load vite %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!--Other elements-->
+        <!--Vite dev client for hmr (will not be displayed on production)-->
+        {% vite %}
+        {% vite 'react' 'ui/js/main.tsx' %}
+    </head>
+    <body>
+        <!--Page content-->
+        <div id="root"></div>
+    </body>
+</html>
