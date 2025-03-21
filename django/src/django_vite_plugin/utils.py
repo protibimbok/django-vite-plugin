@@ -3,36 +3,27 @@ from django.conf import settings
 from django.contrib.staticfiles import finders
 from urllib.parse import urljoin
 from .config_helper import get_config
-import json
-import sys
+from .constants import ROOT_DIR_LEN
+from .cache import FOUND_FILES_CACHE, VITE_MANIFEST, DEV_SERVER
+from .manifest import get_manifest_entry, get_manifest_css_files, load_manifest
+from .html import get_html
 
 # Length of the root directory
 ROOT_DIR_LEN = len(str(getattr(settings, "BASE_DIR")))
 
-# Cache for previously searched files map
-FOUND_FILES_CACHE = {}
-
 CONFIG = get_config()
 
-# Make sure 'BUILD_URL_PREFIX' finish with a '/'
-if CONFIG['BUILD_URL_PREFIX'][-1] != "/":
-    CONFIG['BUILD_URL_PREFIX'] += "/"
+# Ensure BUILD_URL_PREFIX ends with '/'
+if not CONFIG['BUILD_URL_PREFIX'].endswith('/'):
+    CONFIG['BUILD_URL_PREFIX'] += '/'
 
+# Set JS attributes for build mode
 if CONFIG['DEV_MODE'] is False and 'JS_ATTRS_BUILD' in CONFIG:
     CONFIG['JS_ATTRS'] = CONFIG['JS_ATTRS_BUILD']
 
-VITE_MANIFEST  = {}
-DEV_SERVER = None
-
 if not CONFIG['DEV_MODE']:
     manifest_path = CONFIG['MANIFEST']
-    try:
-        with open(manifest_path, "r") as manifest_file:
-            VITE_MANIFEST = json.load(manifest_file)
-    except FileNotFoundError:
-        sys.stderr.write(f"Cannot read Vite manifest file at {manifest_path}\n")
-    except Exception as error:
-        raise RuntimeError(f"Cannot read Vite manifest file at {manifest_path}: {error}")
+    load_manifest(manifest_path)
 
 
 def make_attrs(attrs: Dict[str, any]):
@@ -58,21 +49,15 @@ DEFAULT_CSS_ATTRS = make_attrs(CONFIG['CSS_ATTRS'])
 
 
 def get_from_manifest(path: str, attrs: Dict[str, str]) -> str:
-    if path not in VITE_MANIFEST:
-        raise RuntimeError(
-            f"Cannot find {path} in Vite manifest "
-        )
-    
-    manifest_entry = VITE_MANIFEST[path]
-    assets = _get_css_files(manifest_entry, {
-        # The css files of a js 'import' should get the default attributes
+    """Get assets from manifest for a given path."""
+    manifest_entry = get_manifest_entry(path)
+    assets = get_manifest_css_files(manifest_entry, {
         'css': DEFAULT_CSS_ATTRS
     })
     assets += get_html(
         urljoin(CONFIG['BUILD_URL_PREFIX'], manifest_entry["file"]),
         attrs
     )
-
     return assets
 
 
@@ -140,28 +125,17 @@ def get_html_dev(url: str, attrs: Dict[str, str]) -> str:
 
 
 def find_asset(arg: str) -> str:
-    """
-    If `STATIC_LOOKUP` is enabled then find the asset
-    using djang's built-in static finder
-
-    Cache the found files for later use
-    """
-    
-
+    """Find asset using Django's static finder with caching."""
     if arg in FOUND_FILES_CACHE:
-        return FOUND_FILES_CACHE[arg] 
+        return FOUND_FILES_CACHE[arg]
     
     if not CONFIG['STATIC_LOOKUP']:
         return arg
     
-
     found = finders.find(arg, False)
-
-    if found is None:
-        final = arg.strip('/\\')
-    else:
-        final = found[ROOT_DIR_LEN:].strip('/\\').replace('\\', '/')
-
+    final = (found[ROOT_DIR_LEN:].strip('/\\').replace('\\', '/') 
+             if found is not None 
+             else arg.strip('/\\'))
+    
     FOUND_FILES_CACHE[arg] = final
-
     return final
