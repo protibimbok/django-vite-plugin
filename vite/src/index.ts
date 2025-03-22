@@ -23,7 +23,7 @@ let DJANGO_VERSION = '...'
 
 const THIS_DIR: string = getAbsolutePathFromMetaUrl(
     typeof __dirname === 'undefined'
-        ? // @ts-ignore
+        ? // @ts-ignore during build
           path.dirname(new URL(import.meta.url).pathname)
         : __dirname,
 )
@@ -147,7 +147,7 @@ function djangoPlugin(config: InternalConfig): Plugin {
                         res.statusCode = 404
                         res.end(
                             fs
-                                .readFileSync(path.join(THIS_DIR, 'info.html'))
+                                .readFileSync(path.join(path.dirname(THIS_DIR), 'info.html'))
                                 .toString(),
                         )
                     }

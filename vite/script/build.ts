@@ -91,6 +91,7 @@ const main = () => {
   // Copy additional files
   copyFileSync(`${srcDir}/package-esm.json`, `${esmDir}/package.json`);
   copyFileSync(`${srcDir}/package-cjs.json`, `${cjsDir}/package.json`);
+  copyFileSync(`${srcDir}/info.html`, `${distDir}/info.html`);
 
   console.log('Build process completed successfully.');
 };
