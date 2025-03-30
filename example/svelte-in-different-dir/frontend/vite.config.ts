@@ -4,11 +4,10 @@ import { djangoVitePlugin } from "django-vite-plugin";
 
 // https://vite.dev/config/
 export default defineConfig({
-  root: "./",
+  root: "./", // This is the root of the frontend assets
   build: {
     emptyOutDir: true,
     sourcemap: true,
-    outDir: "dist",
     rollupOptions: {
       output: {
         assetFileNames: "[name]/main.[ext]",
@@ -21,7 +20,7 @@ export default defineConfig({
     svelte(),
     djangoVitePlugin({
       input: ["./src/main.ts"],
-      root: "../project",
+      root: "../project", // This is the root of the django project
     }),
   ],
 });
