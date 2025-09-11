@@ -37,13 +37,13 @@
         "lint": "eslint --ext .ts ./src"
     },
     "devDependencies": {
-        "@types/node": "^18.19.33",
-        "@typescript-eslint/eslint-plugin": "^5.62.0",
-        "@typescript-eslint/parser": "^5.62.0",
-        "prettier": "^3.2.5",
+        "@types/node": "^22.18.1",
+        "@typescript-eslint/eslint-plugin": "^8.43.0",
+        "@typescript-eslint/parser": "^8.43.0",
+        "prettier": "^3.6.2",
         "tsc": "^2.0.4",
-        "typescript": "^4.9.5",
-        "vite": "^4.5.3"
+        "typescript": "^5.9.2",
+        "vite": "^7.1.5"
     },
     "peerDependencies": {
         "vite": "^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0"
@@ -52,9 +52,9 @@
         "node": ">=14"
     },
     "dependencies": {
-        "glob": "^10.4.1",
-        "jsonc-parser": "^3.2.1",
-        "picocolors": "^1.0.1"
+        "glob": "^11.0.3",
+        "jsonc-parser": "^3.3.1",
+        "picocolors": "^1.1.1"
     },
     "packageManager": "pnpm@9.7.0+sha512.dc09430156b427f5ecfc79888899e1c39d2d690f004be70e05230b72cb173d96839587545d09429b55ac3c429c801b4dc3c0e002f653830a420fa2dd4e3cf9cf"
 }
