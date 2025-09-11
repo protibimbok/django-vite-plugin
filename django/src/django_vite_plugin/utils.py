@@ -50,6 +50,8 @@ DEFAULT_CSS_ATTRS = make_attrs(CONFIG['CSS_ATTRS'])
 
 def get_from_manifest(path: str, attrs: Dict[str, str]) -> str:
     """Get assets from manifest for a given path."""
+    if path == 'react':
+        return ''
     manifest_entry = get_manifest_entry(path)
     assets = get_manifest_css_files(manifest_entry, {
         'css': DEFAULT_CSS_ATTRS
