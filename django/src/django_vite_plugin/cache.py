@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, Union
 from functools import lru_cache
 
 # Cache for previously searched files
@@ -8,7 +8,7 @@ FOUND_FILES_CACHE: Dict[str, str] = {}
 VITE_MANIFEST: Dict[str, Any] = {}
 
 # Cache for dev server URL
-DEV_SERVER: str | None = None
+DEV_SERVER: Union[str, None] = None
 
 @lru_cache(maxsize=128)
 def get_cached_manifest(manifest_path: str) -> Dict[str, Any]:

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Union
 from django.conf import settings
 from .constants import DEFAULT_CONFIG
 
@@ -24,7 +24,7 @@ def get_config() -> Dict[str, Any]:
     
     return config
 
-def _deep_copy(config: Dict[str, Any] | None, default: Dict[str, Any]) -> Dict[str, Any]:
+def _deep_copy(config: Union[Dict[str, Any], None], default: Dict[str, Any]) -> Dict[str, Any]:
     """Deep copy configuration with defaults."""
     if config is None or type(config) != type(default):
         return default.copy()
