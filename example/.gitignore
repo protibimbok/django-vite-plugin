@@ -1,2 +1,4 @@
 /**/django_vite_plugin
 /**/.vite
+/**/static/assets
+/**/static/dist
