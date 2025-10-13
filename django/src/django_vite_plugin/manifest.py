@@ -1,10 +1,7 @@
 import json
 import sys
 from pathlib import Path
-from urllib.parse import urljoin
-from typing import Dict, Any, Union
-from .html import get_html
-from .constants import DEFAULT_CONFIG
+from typing import Dict, Any
 from .cache import VITE_MANIFEST
 
 def load_manifest(manifest_path: Path) -> Dict[str, Any]:
@@ -25,31 +22,3 @@ def get_manifest_entry(path: str) -> Dict[str, Any]:
     if path not in VITE_MANIFEST:
         raise RuntimeError(f"Cannot find {path} in Vite manifest")
     return VITE_MANIFEST[path]
-
-def get_manifest_css_files(manifest_entry: Dict[str, Any], attrs: Dict[str, str], already_processed: Union[set, None] = None) -> str:
-    """Get CSS files from manifest entry."""
-    if already_processed is None:
-        already_processed = set()
-    
-    html = []
-    
-    # Process imports recursively
-    if 'imports' in manifest_entry:
-        for import_path in manifest_entry['imports']:
-            html.append(get_manifest_css_files(
-                VITE_MANIFEST[import_path],
-                attrs,
-                already_processed
-            ))
-    
-    # Process CSS files
-    if 'css' in manifest_entry:
-        for css_path in manifest_entry['css']:
-            if css_path not in already_processed:
-                html.append(get_html(
-                    urljoin(DEFAULT_CONFIG['BUILD_URL_PREFIX'], css_path),
-                    attrs
-                ))
-                already_processed.add(css_path)
-    
-    return ''.join(html) 

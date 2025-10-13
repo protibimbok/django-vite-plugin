@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 from .config_helper import get_config
 from .constants import ROOT_DIR_LEN
 from .cache import FOUND_FILES_CACHE, VITE_MANIFEST, DEV_SERVER
-from .manifest import get_manifest_entry, get_manifest_css_files, load_manifest
+from .manifest import get_manifest_entry, load_manifest
 from .html import get_html
 
 # Length of the root directory
@@ -53,7 +53,7 @@ def get_from_manifest(path: str, attrs: Dict[str, str]) -> str:
     if path == 'react':
         return ''
     manifest_entry = get_manifest_entry(path)
-    assets = get_manifest_css_files(manifest_entry, {
+    assets = _get_css_files(manifest_entry, {
         'css': DEFAULT_CSS_ATTRS
     })
     assets += get_html(
