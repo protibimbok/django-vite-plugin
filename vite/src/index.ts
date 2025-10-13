@@ -95,13 +95,10 @@ function djangoPlugin(config: InternalConfig): Plugin {
             resolvedConfig = config
         },
         transform(code) {
-            if (resolvedConfig?.command === 'serve') {
-                code = code.replace(
-                    /http:\/\/__django_vite_plugin_placeholder__\.protibimbok/g,
-                    viteDevServerUrl,
-                )
-                return code
-            }
+            return code.replace(
+                /http:\/\/__django_vite_plugin_placeholder__\.protibimbok/g,
+                resolvedConfig?.command === 'serve' ? viteDevServerUrl : config.appConfig.BUILD_URL_PREFIX,
+            )
         },
         configureServer(server) {
             server.httpServer?.once('listening', () => {
