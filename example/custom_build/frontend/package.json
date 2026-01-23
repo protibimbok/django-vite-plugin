@@ -2,7 +2,7 @@
   "name": "django-vite-plugin-custom-build-demo",
   "private": true,
   "version": "0.0.0",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
