@@ -272,6 +272,8 @@ The manifest file must remain accessible locally at `BUILD_DIR/.vite/manifest.js
 2. Configure settings:
 
     ```python
+    DEBUG = True
+
     STATICFILES_DIRS = [BASE_DIR / 'build']
 
     DJANGO_VITE_PLUGIN = {
@@ -279,6 +281,11 @@ The manifest file must remain accessible locally at `BUILD_DIR/.vite/manifest.js
         'BUILD_DIR': 'build',
     }
     ```
+
+    `DEBUG` must stay `True`. Django never serves static files with
+    `DEBUG = False`, so these URL patterns are inactive in that case and the
+    built assets will 404. Only `DEV_MODE` needs to be turned off to load the
+    build instead of the dev server.
 
 3. Run `npm run build` and start Django.
 
