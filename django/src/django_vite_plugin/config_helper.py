@@ -1,3 +1,4 @@
+import copy
 from pathlib import Path
 from typing import Dict, Any, Union
 from django.conf import settings
@@ -25,18 +26,15 @@ def get_config() -> Dict[str, Any]:
     return config
 
 def _deep_copy(config: Union[Dict[str, Any], None], default: Dict[str, Any]) -> Dict[str, Any]:
-    """Deep copy configuration with defaults."""
-    if config is None or type(config) != type(default):
-        return default.copy()
+    """Merge a configuration over the defaults, sharing nothing with either."""
+    if not isinstance(config, dict):
+        return copy.deepcopy(default)
 
-    result = default.copy()
+    result = copy.deepcopy(default)
     for key, value in config.items():
-        if key in default:
-            if isinstance(default[key], dict):
-                result[key] = _deep_copy(value, default[key])
-            else:
-                result[key] = value
+        if isinstance(default.get(key), dict):
+            result[key] = _deep_copy(value, default[key])
         else:
-            result[key] = value
+            result[key] = copy.deepcopy(value)
 
     return result
