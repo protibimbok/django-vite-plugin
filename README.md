@@ -113,6 +113,10 @@ import utils from '@s:myapp/js/utils.js'
 import App from '@t:myapp/App.jsx'
 ```
 
+Aliases are named after the app's *label*, so a nested app such as `apps.blog`
+is `@s:blog`. Only apps inside `BASE_DIR` get one — installed third-party apps
+are not aliased.
+
 ### Auto Reload
 
 The browser automatically reloads when `.html` or `.py` files change. No configuration required.

@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { BuildOptions } from 'vite'
+import { BuildOptions, normalizePath } from 'vite'
 import { glob } from 'glob'
 import { addStaticToInputs, createJsConfig } from './helpers.js'
 import { InputOption } from 'rollup'
@@ -132,12 +132,11 @@ async function resolveFullReloadConfig(
         return
     }
 
-    const root = config.root || '.'
     const watch: string[] = []
 
     for (const app in apps) {
-        if (fs.existsSync(root + '/' + app)) {
-            watch.push(`${root}/${app}/**/*.py`)
+        if (fs.existsSync(apps[app])) {
+            watch.push(`${normalizePath(apps[app])}/**/*.py`)
         }
     }
     config.watch = glob.globSync(watch)
