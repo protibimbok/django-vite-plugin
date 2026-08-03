@@ -24,7 +24,8 @@ export function execPythonNoErr(
 ): Promise<[string, string]> {
     return new Promise((resolve) => {
         args = [...(args || []), ...(config.pyArgs || [])]
-        const py = spawn(config.pyPath || 'python', [
+        const pyPath = config.pyPath || 'python'
+        const py = spawn(pyPath, [
             path.join(config.root || '', 'manage.py'),
             'django_vite_plugin',
             ...args,
@@ -37,6 +38,16 @@ export function execPythonNoErr(
         })
         py.stdout.on('data', (data) => {
             res += data.toString()
+        })
+        
+        py.on('error', (error: NodeJS.ErrnoException) => {
+            err +=
+                error.code === 'ENOENT'
+                    ? `django-vite-plugin: could not run '${pyPath}'; no such executable.\n` +
+                      "Set 'pyPath' to the Python of this project, e.g. " +
+                      "djangoVitePlugin({ input: [...], pyPath: 'python3' })\n"
+                    : `django-vite-plugin: could not run '${pyPath}': ${error.message}\n`
+            resolve([res, err])
         })
         py.on('close', () => {
             resolve([res, err])
