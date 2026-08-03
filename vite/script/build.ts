@@ -1,5 +1,5 @@
 import ts from 'typescript';
-import { copyFileSync, mkdirSync, existsSync, rmSync } from 'fs';
+import { copyFileSync, mkdirSync, existsSync, rmSync, writeFileSync } from 'fs';
 import path from 'path';
 
 const loadTsConfig = (configPath: string): ts.ParsedCommandLine => {
@@ -45,6 +45,18 @@ const transpileWithTsConfig = (inputDir: string, outputDir: string, options: Tra
 };
 
 
+const BASEDIR_IMPL = {
+  esm: `import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+export const BASE_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+`,
+  cjs: `"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const path = require("node:path");
+exports.BASE_DIR = path.resolve(__dirname, "..", "..");
+`,
+};
+
 const main = () => {
   const srcDir = 'src';
   const distDir = 'dist';
@@ -87,6 +99,10 @@ const main = () => {
     options: { ...tsConfig.options, module: ts.ModuleKind.CommonJS },
     fileNames: filteredFiles,
   });
+
+  // Replace the declaration-only `basedir` stub with the per-format implementation
+  writeFileSync(`${esmDir}/basedir.js`, BASEDIR_IMPL.esm);
+  writeFileSync(`${cjsDir}/basedir.js`, BASEDIR_IMPL.cjs);
 
   // Copy additional files
   copyFileSync(`${srcDir}/package-esm.json`, `${esmDir}/package.json`);

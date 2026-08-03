@@ -14,23 +14,9 @@ import type {
 } from './config.js'
 import { AddressInfo } from 'net'
 
-export function getAbsolutePathFromMetaUrl(path: string): string {
-    if (process.platform === 'win32' && path.startsWith('/')) {
-        return path.substring(1)
-    }
-    return path
-}
+import { BASE_DIR } from './basedir.js'
 
-export const BASE_DIR: string = path.dirname(
-    path.dirname(
-        getAbsolutePathFromMetaUrl(
-            typeof __dirname === 'undefined'
-                ? // @ts-ignore
-                  path.dirname(new URL(import.meta.url).pathname)
-                : __dirname,
-        ),
-    ),
-)
+export { BASE_DIR }
 
 export function execPythonNoErr(
     args: string[],
