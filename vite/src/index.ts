@@ -147,18 +147,19 @@ function djangoPlugin(config: InternalConfig): Plugin {
 
             return () =>
                 server.middlewares.use((req, res, next) => {
-                    if (req.url === '/index.html') {
-                        res.statusCode = 404
-                        res.end(
-                            fs
-                                .readFileSync(
-                                    path.join(BASE_DIR, 'dist', 'info.html'),
-                                )
-                                .toString(),
-                        )
+                    if (req.url !== '/index.html') {
+                        return next()
                     }
-
-                    next()
+                    
+                    res.statusCode = 404
+                    res.setHeader('Content-Type', 'text/html')
+                    res.end(
+                        fs
+                            .readFileSync(
+                                path.join(BASE_DIR, 'dist', 'info.html'),
+                            )
+                            .toString(),
+                    )
                 })
         },
     }
