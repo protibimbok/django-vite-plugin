@@ -36,7 +36,7 @@ django-vite-plugin/
 
 ### Prerequisites
 
-- Python 3.7+
+- Python 3.9+
 - Node.js 14+
 - pnpm (recommended) or npm
 
