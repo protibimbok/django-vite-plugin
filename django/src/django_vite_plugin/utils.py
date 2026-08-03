@@ -5,10 +5,9 @@ from django.utils.html import conditional_escape
 from django.utils.safestring import SafeString, mark_safe
 from urllib.parse import urljoin
 from .config_helper import get_config
-from .constants import BASE_DIR
+from .constants import BASE_DIR, CSS_EXTENSIONS
 from .cache import FOUND_FILES_CACHE, VITE_MANIFEST, DEV_SERVER
 from .manifest import get_manifest_entry, load_manifest
-from .html import get_html
 
 CONFIG = get_config()
 
@@ -115,7 +114,7 @@ def get_html_dev(url: str, attrs: Dict[str, str]) -> str:
                 DEV_SERVER = hotfile.read()
         except:
             raise Exception("Vite dev server is not started!")
-    if url.endswith(('.css', '.scss', '.sass', '.less')):
+    if url.endswith(CSS_EXTENSIONS):
         return f'<link {attrs["css"]} href="{conditional_escape(f"{DEV_SERVER}/{url}")}" />'
     elif url == 'react':
         return f"""

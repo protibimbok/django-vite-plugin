@@ -36,4 +36,4 @@ DEFAULT_CONFIG = {
 }
 
 # File extensions
-CSS_EXTENSIONS = {'.css', '.scss', '.sass', '.less'}
+CSS_EXTENSIONS = ('.css', '.scss', '.sass', '.less')
