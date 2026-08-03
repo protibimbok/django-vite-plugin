@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Dict, Any, Union
 from django.conf import settings
-from .constants import DEFAULT_CONFIG
+from .constants import BASE_DIR, DEFAULT_CONFIG
 
 
 def get_config() -> Dict[str, Any]:
@@ -18,7 +18,7 @@ def get_config() -> Dict[str, Any]:
     
     # Handle hot file path
     if config['HOT_FILE'] is None:
-        config['HOT_FILE'] = str(getattr(settings, 'BASE_DIR') / '.hotfile')
+        config['HOT_FILE'] = str(BASE_DIR / '.hotfile')
     elif isinstance(config['HOT_FILE'], Path):
         config['HOT_FILE'] = str(config['HOT_FILE'])
     
