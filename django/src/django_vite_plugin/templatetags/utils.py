@@ -1,4 +1,4 @@
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Optional, Tuple
 from django import template
 from ..utils import CONFIG, get_from_manifest, get_html_dev, find_asset, make_attrs
 import copy
@@ -18,33 +18,53 @@ def make_template_attrs(attrs: Dict[str, str]) -> Dict[str, str]:
         'css': make_attrs(css_attrs)
     }
 
+QUOTES = ('"', "'")
+
+
+def _unquote(value: str, bit: Optional[str] = None) -> str:
+    if len(value) < 2 or value[-1] != value[0]:
+        raise template.TemplateSyntaxError(
+            f"The 'vite' tag got an unterminated string: {bit or value}"
+        )
+    return value[1:-1]
+
+
 def parse_template_args(bits: List[str]) -> Tuple[List[Any], Dict[str, Any], bool, bool]:
     """Parse template tag arguments into assets and attributes."""
     if not bits and CONFIG['DEV_MODE']:
         return [CONFIG['WS_CLIENT']], {}, False, False
-    
+
     assets: List[Any] = []
     kwargs: Dict[str, Any] = {}
     has_dynamic_path = False
     has_dynamic_attr = False
 
     for bit in bits:
-        if '=' in bit:
+        if not bit:
+            raise template.TemplateSyntaxError("The 'vite' tag got an empty argument")
+
+        if bit[0] in QUOTES:
+            # A quoted argument is always an asset path, even if it contains '='
+            assets.append(find_asset(_unquote(bit)))
+        elif '=' in bit:
             key, value = bit.split('=', maxsplit=1)
-            if value[0] not in ['\'', '"']:
+            if not key:
+                raise template.TemplateSyntaxError(
+                    f"The 'vite' tag got an attribute without a name: {bit}"
+                )
+            if not value:
+                raise template.TemplateSyntaxError(
+                    f"The 'vite' tag got an attribute without a value: {bit}"
+                )
+            if value[0] in QUOTES:
+                kwargs[key] = _unquote(value, bit)
+            else:
                 has_dynamic_attr = True
-                value = template.Variable(value)
-            else:
-                value = value[1:-1]
-            kwargs[key] = value
+                kwargs[key] = template.Variable(value)
         else:
-            if bit[0] not in ['\'', '"']:
-                has_dynamic_path = True
-                path = template.Variable(bit)
-            else:
-                path = find_asset(bit[1:-1])
-            assets.append(path)
-    
+            has_dynamic_path = True
+            assets.append(template.Variable(bit))
+
     return assets, kwargs, has_dynamic_path, has_dynamic_attr
 
 def make_template_asset(asset: str, attrs: Dict[str, str]) -> str:
