@@ -5,8 +5,9 @@ from django.utils.html import conditional_escape
 from django.utils.safestring import SafeString, mark_safe
 from urllib.parse import urljoin
 from .config_helper import get_config
+from . import cache
 from .constants import BASE_DIR, CSS_EXTENSIONS
-from .cache import FOUND_FILES_CACHE, VITE_MANIFEST, DEV_SERVER
+from .cache import FOUND_FILES_CACHE
 from .manifest import get_manifest_entry, load_manifest
 
 CONFIG = get_config()
@@ -106,14 +107,19 @@ def get_html(url: str, attrs: Dict[str, str]) -> str:
         return f'<script {attrs["js"]} src="{url}"></script>'
 
 
-def get_html_dev(url: str, attrs: Dict[str, str]) -> str:
-    global DEV_SERVER
-    if DEV_SERVER is None:
+def get_dev_server() -> str:
+    """URL of the running Vite dev server, read from the hot file once."""
+    if cache.DEV_SERVER is None:
         try:
             with open(CONFIG['HOT_FILE'], 'r') as hotfile:
-                DEV_SERVER = hotfile.read()
-        except:
+                cache.DEV_SERVER = hotfile.read()
+        except OSError:
             raise Exception("Vite dev server is not started!")
+    return cache.DEV_SERVER
+
+
+def get_html_dev(url: str, attrs: Dict[str, str]) -> str:
+    DEV_SERVER = get_dev_server()
     if url.endswith(CSS_EXTENSIONS):
         return f'<link {attrs["css"]} href="{conditional_escape(f"{DEV_SERVER}/{url}")}" />'
     elif url == 'react':
