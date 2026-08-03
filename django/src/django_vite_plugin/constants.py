@@ -21,5 +21,5 @@ DEFAULT_CONFIG = {
 # File extensions
 CSS_EXTENSIONS = {'.css', '.scss', '.sass', '.less'}
 
-# Root directory length for path calculations
-ROOT_DIR_LEN = len(str(getattr(settings, "BASE_DIR"))) 
+# Project root, used to express found assets relative to it
+BASE_DIR = str(getattr(settings, "BASE_DIR"))

@@ -1,17 +1,14 @@
+import os
 from typing import Any, Dict, Optional, Set
-from django.conf import settings
 from django.contrib.staticfiles import finders
 from django.utils.html import conditional_escape
 from django.utils.safestring import SafeString, mark_safe
 from urllib.parse import urljoin
 from .config_helper import get_config
-from .constants import ROOT_DIR_LEN
+from .constants import BASE_DIR
 from .cache import FOUND_FILES_CACHE, VITE_MANIFEST, DEV_SERVER
 from .manifest import get_manifest_entry, load_manifest
 from .html import get_html
-
-# Length of the root directory
-ROOT_DIR_LEN = len(str(getattr(settings, "BASE_DIR")))
 
 CONFIG = get_config()
 
@@ -135,18 +132,25 @@ def get_html_dev(url: str, attrs: Dict[str, str]) -> str:
     
 
 
+def _relative_to_base(found: str) -> str:
+    try:
+        relative = os.path.relpath(found, BASE_DIR)
+    except ValueError:
+        # On Windows there is no relative path between different drives
+        relative = found
+    return relative.replace('\\', '/')
+
+
 def find_asset(arg: str) -> str:
     """Find asset using Django's static finder with caching."""
     if arg in FOUND_FILES_CACHE:
         return FOUND_FILES_CACHE[arg]
-    
+
     if not CONFIG['STATIC_LOOKUP']:
         return arg
-    
+
     found = finders.find(arg, False)
-    final = (found[ROOT_DIR_LEN:].strip('/\\').replace('\\', '/') 
-             if found is not None 
-             else arg.strip('/\\'))
-    
+    final = _relative_to_base(found) if found is not None else arg.strip('/\\')
+
     FOUND_FILES_CACHE[arg] = final
     return final
