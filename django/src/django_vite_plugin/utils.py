@@ -1,6 +1,8 @@
-from typing import Dict
+from typing import Any, Dict
 from django.conf import settings
 from django.contrib.staticfiles import finders
+from django.utils.html import conditional_escape
+from django.utils.safestring import SafeString, mark_safe
 from urllib.parse import urljoin
 from .config_helper import get_config
 from .constants import ROOT_DIR_LEN
@@ -26,21 +28,20 @@ if not CONFIG['DEV_MODE']:
     load_manifest(manifest_path)
 
 
-def make_attrs(attrs: Dict[str, any]):
+def make_attrs(attrs: Dict[str, Any]) -> SafeString:
     """
     Compile attributes to a string
     if attr is True then just add the attribute
     """
-    attr_str = ''
+    parts = []
     for key, val in attrs.items():
-        attr_str += key
-
-        if val is False:
-            attr_str += '="false"'
-        elif val is not True:
-            attr_str += f'="{val}"'
-        attr_str += ' '
-    return attr_str[0:-1]
+        key = conditional_escape(key)
+        if val is True:
+            parts.append(key)
+        else:
+            value = 'false' if val is False else val
+            parts.append(f'{key}="{conditional_escape(value)}"')
+    return mark_safe(' '.join(parts))
 
 
 
@@ -95,11 +96,13 @@ def _get_css_files(
 
 
 def get_html(url: str, attrs: Dict[str, str]) -> str:
-    if url.endswith('.css'):
+    is_css = url.endswith('.css')
+    url = conditional_escape(url)
+    if is_css:
         return f'<link {attrs["css"]} href="{url}" />'
     else:
         return f'<script {attrs["js"]} src="{url}"></script>'
-    
+
 
 def get_html_dev(url: str, attrs: Dict[str, str]) -> str:
     global DEV_SERVER
@@ -110,7 +113,7 @@ def get_html_dev(url: str, attrs: Dict[str, str]) -> str:
         except:
             raise Exception("Vite dev server is not started!")
     if url.endswith(('.css', '.scss', '.sass', '.less')):
-        return f'<link {attrs["css"]} href="{DEV_SERVER}/{url}" />'
+        return f'<link {attrs["css"]} href="{conditional_escape(f"{DEV_SERVER}/{url}")}" />'
     elif url == 'react':
         return f"""
         <script type="module">
@@ -122,7 +125,7 @@ def get_html_dev(url: str, attrs: Dict[str, str]) -> str:
         </script>
         """
     else:
-        return f'<script {attrs["js"]} src="{DEV_SERVER}/{url}"></script>'
+        return f'<script {attrs["js"]} src="{conditional_escape(f"{DEV_SERVER}/{url}")}"></script>'
     
 
 
