@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Set
 from django.conf import settings
 from django.contrib.staticfiles import finders
 from django.utils.html import conditional_escape
@@ -68,28 +68,34 @@ def get_from_manifest(path: str, attrs: Dict[str, str]) -> str:
 def _get_css_files(
     manifest_entry: Dict[str, str],
     attrs: Dict[str, str],
-    already_processed = None
+    seen_imports: Optional[Set[str]] = None,
+    seen_css: Optional[Set[str]] = None,
 ) -> str:
-    if already_processed is None:
-        already_processed = []
+    if seen_imports is None:
+        seen_imports = set()
+    if seen_css is None:
+        seen_css = set()
     html = ''
 
-    if 'imports' in manifest_entry:
-        for import_path in manifest_entry['imports']:
-            html += _get_css_files(
-                VITE_MANIFEST[import_path],
-                attrs,
-                already_processed
-            )
+    for import_path in manifest_entry.get('imports', ()):
+        if import_path in seen_imports:
+            continue
+        seen_imports.add(import_path)
+        html += _get_css_files(
+            get_manifest_entry(import_path),
+            attrs,
+            seen_imports,
+            seen_css
+        )
 
-    if 'css' in manifest_entry:
-        for css_path in manifest_entry['css']:
-            if css_path not in already_processed:
-                html += get_html(
-                    urljoin(CONFIG['BUILD_URL_PREFIX'], css_path),
-                    attrs
-                )
-            already_processed.append(css_path)
+    for css_path in manifest_entry.get('css', ()):
+        if css_path in seen_css:
+            continue
+        seen_css.add(css_path)
+        html += get_html(
+            urljoin(CONFIG['BUILD_URL_PREFIX'], css_path),
+            attrs
+        )
 
     return html
 
