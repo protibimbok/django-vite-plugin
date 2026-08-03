@@ -7,7 +7,7 @@ from .cache import VITE_MANIFEST
 def load_manifest(manifest_path: Path) -> Dict[str, Any]:
     """Load and cache the Vite manifest file."""
     try:
-        with open(manifest_path, "r") as manifest_file:
+        with open(manifest_path, "r", encoding="utf-8") as manifest_file:
             manifest_data = json.load(manifest_file)
             VITE_MANIFEST.update(manifest_data)
             return manifest_data

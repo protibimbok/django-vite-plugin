@@ -111,7 +111,7 @@ def get_dev_server() -> str:
     """URL of the running Vite dev server, read from the hot file once."""
     if cache.DEV_SERVER is None:
         try:
-            with open(CONFIG['HOT_FILE'], 'r') as hotfile:
+            with open(CONFIG['HOT_FILE'], 'r', encoding='utf-8') as hotfile:
                 cache.DEV_SERVER = hotfile.read()
         except OSError:
             raise Exception("Vite dev server is not started!")
