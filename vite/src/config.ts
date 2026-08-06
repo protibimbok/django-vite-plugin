@@ -1,7 +1,7 @@
 import fs from 'fs'
 import { BuildOptions, normalizePath } from 'vite'
 import { glob } from 'glob'
-import { addStaticToInputs, createJsConfig } from './helpers.js'
+import { addStaticToInputs } from './helpers.js'
 import { InputOption } from 'rollup'
 
 export interface AppConfig {
@@ -32,7 +32,9 @@ export interface PluginConfig {
     root?: string
 
     /**
-     * If the aliases should be added in the `jsconfig.json` or not
+     * Whether the aliases should be written to `jsconfig.json`/`tsconfig.json`.
+     * By default they are written only if such a file already exists; `true`
+     * creates a `jsconfig.json` when there is none, `false` writes nothing.
      */
     addAliases?: boolean
 
@@ -90,11 +92,9 @@ export async function resolvePluginConfig(
     //@ts-expect-error no way to convert decleared types
     config.appConfig = appConfig
 
-    if (config.addAliases === true) {
-        createJsConfig(config as InternalConfig)
-    }
-
-    config.addAliases = config.addAliases !== false
+    // `addAliases` stays tri-state: `false` writes nothing, `true` also creates
+    // a `jsconfig.json` when the project has none, `undefined` only updates an
+    // existing config file. See `writeAliases`.
 
     return config as InternalConfig
 }

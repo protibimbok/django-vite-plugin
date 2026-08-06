@@ -338,7 +338,9 @@ djangoVitePlugin({
 
 The plugin automatically updates `jsconfig.json` or `tsconfig.json` with path aliases when you run `npm run dev`. This enables autocomplete for `@s:appname` and `@t:appname` imports.
 
-To force alias generation even without an existing config file:
+The first of `tsconfig.app.json`, `tsconfig.json` and `jsconfig.json` that exists
+is the one updated. To also have a `jsconfig.json` created when the project has
+none of them:
 
 ```javascript
 djangoVitePlugin({
@@ -363,9 +365,9 @@ djangoVitePlugin({
 
 ### Import aliases not working
 
-- Run `npm run dev` to generate/update `jsconfig.json`
+- Run `npm run dev` to update `jsconfig.json`/`tsconfig.json`
+- If the project has no such file, set `addAliases: true` to have one created
 - Restart your IDE after alias generation
-- For TypeScript, aliases are added to `tsconfig.json` automatically
 
 ## License
 

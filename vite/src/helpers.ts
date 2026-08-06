@@ -143,11 +143,14 @@ const getJsOrTsConfigPath = (
     return undefined
 }
 
-export async function writeAliases(
+export function writeAliases(
     config: InternalConfig,
     aliases: Record<string, string>,
+    createIfMissing = false,
 ) {
-    const cfgOpts = getJsOrTsConfigPath(config)
+    const cfgOpts =
+        getJsOrTsConfigPath(config) ??
+        (createIfMissing ? createJsConfig(config) : undefined)
     if (!cfgOpts) {
         return
     }
@@ -195,28 +198,26 @@ export async function writeAliases(
     fs.writeFileSync(cfgPath, newContent, 'utf-8')
 }
 
-export function createJsConfig(config: InternalConfig) {
-    let root = process.cwd()
-    let jsconfigPath = path.join(root, 'jsconfig.json')
+/**
+ * Only called when `getJsOrTsConfigPath` found nothing, so it never has to
+ * check for an existing config itself. It creates the file where that lookup
+ * looks first, so the aliases land in the file that was just created.
+ */
+function createJsConfig(config: InternalConfig): {
+    root: string
+    cfgPath: string
+} {
+    const root = config.root
+        ? path.join(process.cwd(), config.root)
+        : process.cwd()
+    const cfgPath = path.join(root, 'jsconfig.json')
 
-    if (fs.existsSync(jsconfigPath)) {
-        return
-    }
+    fs.writeFileSync(
+        cfgPath,
+        JSON.stringify({ exclude: ['node_modules'] }, null, 2),
+    )
 
-    const DEFAULT = {
-        exclude: ['node_modules'],
-    }
-
-    if (!config.root) {
-        fs.writeFileSync(jsconfigPath, JSON.stringify(DEFAULT, null, 2))
-        return
-    }
-    root = path.join(process.cwd(), config.root)
-    jsconfigPath = path.join(root, 'jsconfig.json')
-    if (fs.existsSync(jsconfigPath)) {
-        return
-    }
-    fs.writeFileSync(jsconfigPath, JSON.stringify(DEFAULT, null, 2))
+    return { root, cfgPath }
 }
 
 export function getAppAliases(appConfig: AppConfig): Record<string, string> {

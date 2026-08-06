@@ -50,8 +50,8 @@ function djangoPlugin(config: InternalConfig): Plugin {
         config.appConfig,
     )
 
-    if (config.addAliases) {
-        writeAliases(config, defaultAliases)
+    if (config.addAliases !== false) {
+        writeAliases(config, defaultAliases, config.addAliases === true)
     }
 
     let viteDevServerUrl: DevServerUrl
