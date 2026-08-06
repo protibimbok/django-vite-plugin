@@ -29,13 +29,11 @@ jobs:
           version: 10
 
       - name: Install dependencies
-        working-directory: vite
-        run: pnpm install
+        run: pnpm install --filter django-vite-plugin
 
       - name: Build and Publish
-        working-directory: vite
         run: |
           pnpm build
-          pnpm publish --no-git-checks
+          pnpm --filter django-vite-plugin publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}

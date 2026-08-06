@@ -25,22 +25,32 @@ django-vite-plugin/
 │   │   └── helpers.ts      # Utility functions
 │   ├── tests/              # node:test suite
 │   └── package.json
-└── example/                # Example projects
-    ├── output/             # Basic example with Tailwind
-    ├── react/              # React integration
-    ├── multi_app/          # Multiple Django apps
-    ├── custom_build/       # Custom build directory
-    ├── svelte-in-different-dir/  # Svelte with separate frontend
-    └── stderr/             # Edge case testing
+├── example/                # Example projects
+│   ├── output/             # Basic example with Tailwind
+│   ├── react/              # React integration
+│   ├── multi_app/          # Multiple Django apps
+│   ├── custom_build/       # Custom build directory
+│   ├── svelte-in-different-dir/  # Svelte with separate frontend
+│   └── stderr/             # Edge case testing
+├── script/                 # Repo tooling (setup.ts bootstraps, example.ts runs examples)
+├── pyproject.toml          # uv workspace + root pytest config
+├── package.json            # root scripts (bootstrap, build, test, lint, dev, e:build)
+└── pnpm-workspace.yaml     # pnpm workspace (plugin + examples)
 ```
 
 ## Development Setup
 
+Everything runs from the repository root - no cd-ing into `django/`, `vite/`,
+or `example/` required. The JS side is a single pnpm workspace
+(`pnpm-workspace.yaml`) covering the plugin and every example; the Python side
+is a uv workspace (`pyproject.toml`) around the `django/` package, and works
+equally well with plain pip.
+
 ### Prerequisites
 
-- Python 3.9+
-- Node.js 14+
-- pnpm (recommended) or npm
+- Python 3.9+ (with uv or pip)
+- Node.js 22+ (the build uses `--experimental-strip-types`)
+- pnpm
 
 ### Initial Setup
 
@@ -51,89 +61,70 @@ django-vite-plugin/
     cd django-vite-plugin
     ```
 
-2. Set up the Python package (editable install):
+2. Run the setup script:
 
     ```sh
-    cd django
-    pip install -e .
-    cd ..
+    pnpm bootstrap
     ```
 
-3. Set up the Vite plugin:
+    This installs the whole JS workspace (plugin + all examples), builds the
+    Vite plugin, and installs the Django package editable with its test
+    dependencies - using uv if available, pip otherwise.
+
+    Or do the same by hand:
 
     ```sh
-    cd vite
-    pnpm install
-    pnpm build
-    cd ..
+    pnpm install && pnpm build
+
+    # with uv (creates ./.venv):
+    uv sync
+
+    # or with pip (into your active environment):
+    pip install -e "./django[test]"
     ```
-
-4. Set up an example project:
-
-    ```sh
-    cd example/output
-    pnpm install
-    cd ../..
-    ```
-
-### Using the Setup Script
-
-```sh
-python setup.py output
-```
-
-This will:
-1. Build the Vite plugin
-2. Install the Django package (editable)
-3. Install dependencies for the example
-
-The script auto-detects:
-- **Python installer**: uv (preferred) or pip
-- **JS package manager**: from lockfiles, or pnpm > yarn > npm
 
 Options:
 ```sh
-python setup.py --all         # Setup all examples
-python setup.py --vite-only   # Only build Vite plugin
-python setup.py --django-only # Only install Django package
-python setup.py --skip-core   # Skip core, only setup example
+pnpm bootstrap --js-only   # Only pnpm install + build the Vite plugin
+pnpm bootstrap --py-only   # Only install the Django package
 ```
-
-Available examples: `output`, `react`, `multi_app`, `custom_build`, `svelte-in-different-dir`, `stderr`
 
 ## Development Workflow
 
 ### Working on the Vite Plugin (JavaScript)
 
 ```sh
-cd vite
-
 # Build once
 pnpm build
 
 # Watch mode (rebuild on changes)
-pnpm build --watch
+pnpm --filter django-vite-plugin build --watch
 ```
 
 The example projects link to the local `vite/` directory, so changes are reflected after rebuilding.
 
 ### Working on the Django Package (Python)
 
-With the editable install (`pip install -e .`), Python changes take effect immediately without reinstalling.
+With the editable install, Python changes take effect immediately without reinstalling.
 
 ### Testing Changes
 
-1. Start an example project:
+1. Start an example project (two terminals, both from the repo root):
 
     ```sh
-    cd example/output
-    
     # Terminal 1: Django
-    python manage.py runserver
-    
+    uv run example/output/manage.py runserver   # or: python example/output/manage.py runserver
+
     # Terminal 2: Vite
-    pnpm dev
+    uv run pnpm dev output
     ```
+
+    (`uv run` puts the workspace `.venv` on PATH so the Vite plugin finds a
+    Python that has Django installed. With pip, activate your environment
+    instead.)
+
+    `pnpm dev` and `pnpm e:build` work for every example; leave the name
+    off to get a list to pick from.
 
 2. Open `http://localhost:8000` in your browser
 
@@ -161,9 +152,7 @@ request. A release cannot publish unless they pass.
 ### Django package
 
 ```sh
-cd django
-pip install -e ".[test]"
-pytest
+uv run pytest      # or, with pip: pip install -e "./django[test]" && pytest
 ```
 
 The suite needs no database and no example project: it configures Django
@@ -175,7 +164,6 @@ about - see `django/tests/conftest.py`.
 ### Vite plugin
 
 ```sh
-cd vite
 pnpm test          # builds first, then runs the suite
 ```
 
@@ -205,12 +193,11 @@ When making changes, test with relevant example projects.
 
 ```sh
 # Build Vite plugin
-cd vite && pnpm build
+pnpm build
 
 # Test production build in example
-cd ../example/output
-pnpm build
-DEV_MODE=False python manage.py runserver
+uv run pnpm e:build output
+DEV_MODE=False uv run example/output/manage.py runserver
 ```
 
 ## Making Changes

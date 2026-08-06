@@ -30,11 +30,9 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - name: Install
-        working-directory: django
-        run: pip install ".[test]" "Django${{ matrix.django }}"
+        run: pip install "./django[test]" "Django${{ matrix.django }}"
 
       - name: Test
-        working-directory: django
         run: pytest -q
 
   vite:
@@ -64,14 +62,13 @@ jobs:
         with:
           python-version: "3.13"
 
+      # The workspace also contains the example projects; only the plugin's
+      # dependencies are needed to lint and test it.
       - name: Install
-        working-directory: vite
-        run: pnpm install
+        run: pnpm install --filter django-vite-plugin
 
       - name: Lint
-        working-directory: vite
         run: pnpm lint
 
       - name: Test
-        working-directory: vite
         run: pnpm test

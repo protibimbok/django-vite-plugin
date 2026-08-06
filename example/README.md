@@ -7,18 +7,13 @@ This directory contains example projects demonstrating various django-vite-plugi
 From the project root:
 
 ```sh
-python setup.py output
+pnpm bootstrap
 ```
 
-This builds the Vite plugin, installs the Django package, and sets up the example.
-
-The script detects your package manager from lockfiles (pnpm, yarn, npm).
-
-Options:
-```sh
-python setup.py --all    # Setup all examples
-python setup.py --help   # Show all options
-```
+This builds the Vite plugin, installs the Django package (with uv if
+available, pip otherwise), and installs dependencies for **all** examples -
+they are members of the repo's pnpm workspace, so one `pnpm install` covers
+everything.
 
 ## Available Examples
 
@@ -31,51 +26,48 @@ python setup.py --help   # Show all options
 | `svelte-in-different-dir` | Svelte with Vite config in a separate frontend directory |
 | `stderr` | Edge case and error handling tests |
 
+## Running an Example
+
+Two terminals, both from the project root (with pip, activate your
+environment and use `python` instead of `uv run`):
+
+```sh
+# Terminal 1 - Django
+uv run example/output/manage.py runserver
+
+# Terminal 2 - Vite
+uv run pnpm dev output
+```
+
+`pnpm dev <name>` and `pnpm e:build <name>` work for every example; leave
+the name off to get a list to pick from.
+
 ## Manual Setup
 
-If you prefer manual setup:
+If you prefer manual setup, from the project root:
 
-1. Install the Django package (from project root):
-   ```sh
-   cd django
-   pip install -e .
-   ```
+```sh
+# Django package (editable, with test deps)
+uv sync                             # or: pip install -e "./django[test]"
 
-2. Build the Vite plugin:
-   ```sh
-   cd vite
-   pnpm install
-   pnpm build
-   ```
-
-3. Install example dependencies:
-   ```sh
-   cd example/output
-   pnpm install
-   ```
-
-4. Run the servers:
-   ```sh
-   # Terminal 1
-   python manage.py runserver
-
-   # Terminal 2
-   pnpm dev
-   ```
+# Vite plugin + all example dependencies
+pnpm install
+pnpm build
+```
 
 ## For Production Testing
 
 Each example links to the local Vite plugin for development. To test with the published package:
 
-1. Update `package.json` to use the npm package:
+1. Update the example's `package.json` to use the npm package:
    ```json
    "django-vite-plugin": "^4.1.0"
    ```
 
-2. Run `pnpm install` (or `npm install`)
+2. Run `pnpm install`
 
-3. Build and test:
+3. Build and test (from the project root):
    ```sh
-   pnpm build
-   python manage.py runserver
+   uv run pnpm e:build output
+   DEV_MODE=False uv run example/output/manage.py runserver
    ```

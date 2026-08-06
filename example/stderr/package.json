@@ -1,4 +1,5 @@
 {
+    "name": "example-stderr",
     "private": true,
     "version": "0.0.1",
     "scripts": {
@@ -8,10 +9,10 @@
     },
     "type": "module",
     "devDependencies": {
-        "@vitejs/plugin-vue": "^4.5.0",
+        "@vitejs/plugin-vue": "^6.0.0",
         "django-vite-plugin": "file:../../vite"
     },
     "dependencies": {
-        "vite": "^5.0.2"
+        "vite": "^7.1.5"
     }
 }

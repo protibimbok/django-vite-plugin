@@ -1,0 +1,11 @@
+packages:
+  - vite
+  - example/output
+  - example/react
+  - example/multi_app
+  - example/stderr
+  - example/custom_build/frontend
+  - example/svelte-in-different-dir/frontend
+
+onlyBuiltDependencies:
+  - esbuild

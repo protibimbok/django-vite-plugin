@@ -1,0 +1,14 @@
+{
+    "name": "django-vite-plugin-monorepo",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "bootstrap": "node --experimental-strip-types script/setup.ts",
+        "build": "pnpm --filter django-vite-plugin build",
+        "test": "pnpm --filter django-vite-plugin test",
+        "lint": "pnpm --filter django-vite-plugin lint",
+        "dev": "node --experimental-strip-types script/example.ts dev",
+        "e:build": "node --experimental-strip-types script/example.ts build"
+    },
+    "packageManager": "pnpm@10.15.1"
+}
