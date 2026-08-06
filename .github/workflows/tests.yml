@@ -68,6 +68,10 @@ jobs:
         working-directory: vite
         run: pnpm install
 
+      - name: Lint
+        working-directory: vite
+        run: pnpm lint
+
       - name: Test
         working-directory: vite
         run: pnpm test

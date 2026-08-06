@@ -39,7 +39,7 @@ export function execPythonNoErr(
         py.stdout.on('data', (data) => {
             res += data.toString()
         })
-        
+
         py.on('error', (error: NodeJS.ErrnoException) => {
             err +=
                 error.code === 'ENOENT'
@@ -55,16 +55,16 @@ export function execPythonNoErr(
     })
 }
 
-export async function execPythonJSON(
+export async function execPythonJSON<T>(
     args: string[],
     config: PluginConfig,
-): Promise<any> {
+): Promise<T> {
     const [res, err] = await execPythonNoErr(args, config)
     try {
         return JSON.parse(res)
     } catch (error) {
         if (err) {
-            throw new Error(err)
+            throw new Error(err, { cause: error })
         } else {
             throw error
         }
@@ -88,7 +88,7 @@ export async function addStaticToInputs(
     input: InputOption,
     config: PluginConfig,
 ): Promise<string[] | Record<string, string>> {
-    let inputs: string[] = []
+    let inputs: string[]
     let isObj = false
     if (typeof input === 'string') {
         inputs = [input]
@@ -99,7 +99,7 @@ export async function addStaticToInputs(
         inputs = input
     }
 
-    const res = await execPythonJSON(
+    const res = await execPythonJSON<string[]>(
         ['--find-static', ...inputs.map((f) => normalizePath(f))],
         config,
     )
@@ -107,7 +107,7 @@ export async function addStaticToInputs(
     if (isObj) {
         const resObj: Record<string, string> = {}
         let i = 0
-        for (let key in input as Record<string, string>) {
+        for (const key in input as Record<string, string>) {
             resObj[key] = res[i]
             i++
         }

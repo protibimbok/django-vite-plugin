@@ -18,6 +18,7 @@ export interface AppConfig {
     STATIC_LOOKUP: boolean
     INSTALLED_APPS: Record<string, string>
     HOT_FILE: string
+    DJANGO_VERSION: string
 }
 
 export interface PluginConfig {
@@ -76,7 +77,7 @@ export async function resolvePluginConfig(
         throw new Error('django-vite-plugin: no input is provided!')
     }
 
-    const promises: any = [
+    const promises: Promise<unknown>[] = [
         resolveFullReloadConfig(config, appConfig.INSTALLED_APPS),
     ]
 
@@ -86,7 +87,7 @@ export async function resolvePluginConfig(
 
     const res = await Promise.all(promises)
     if (appConfig.STATIC_LOOKUP) {
-        config.input = res[1]
+        config.input = res[1] as Awaited<ReturnType<typeof addStaticToInputs>>
     }
 
     //@ts-expect-error no way to convert decleared types

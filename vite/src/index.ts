@@ -12,6 +12,7 @@ import {
     BASE_DIR,
 } from './helpers.js'
 import {
+    AppConfig,
     DevServerUrl,
     InternalConfig,
     PluginConfig,
@@ -32,7 +33,10 @@ export async function djangoVitePlugin(
         config = { input: config }
     }
     process.stdout.write('Loading configurations...\r')
-    const appConfig = await execPythonJSON(['--action', 'config'], config)
+    const appConfig = await execPythonJSON<AppConfig>(
+        ['--action', 'config'],
+        config,
+    )
 
     if (DJANGO_VERSION === '...') {
         DJANGO_VERSION = appConfig.DJANGO_VERSION
@@ -162,7 +166,7 @@ function djangoPlugin(config: InternalConfig): Plugin[] {
                     if (req.url !== '/index.html') {
                         return next()
                     }
-                    
+
                     res.statusCode = 404
                     res.setHeader('Content-Type', 'text/html')
                     res.end(
@@ -225,16 +229,15 @@ function fullReload(config: InternalConfig): Plugin {
             name: 'django-vite-plugin-reloader',
         }
     }
-    let reloader = config.reloader
-    if (reloader === true) {
-        reloader = (file: string) => /\.(html|py)$/.test(file)
-    }
+    const reloader =
+        config.reloader === true
+            ? (file: string) => /\.(html|py)$/.test(file)
+            : config.reloader
 
     return {
         name: 'django-vite-plugin-reloader',
         configureServer({ ws, watcher }) {
             watcher.on('change', (file) => {
-                // @ts-ignore
                 if (reloader(file)) {
                     setTimeout(
                         () => ws.send({ type: 'full-reload', path: '*' }),

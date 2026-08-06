@@ -81,7 +81,7 @@ const main = () => {
   }
 
   console.log('Transpiling ESM...');
-  
+
   // Transpile for ESM
   mkdirSync(esmDir, { recursive: true });
   transpileWithTsConfig(srcDir, esmDir, {
