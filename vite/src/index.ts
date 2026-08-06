@@ -19,6 +19,10 @@ import {
     resolvePluginConfig,
 } from './config.js'
 
+// Stands in for the dev server URL, which is not known when `config` runs.
+const ORIGIN_PLACEHOLDER =
+    'http://__django_vite_plugin_placeholder__.protibimbok'
+
 let DJANGO_VERSION = '...'
 
 export async function djangoVitePlugin(
@@ -71,9 +75,7 @@ function djangoPlugin(config: InternalConfig): Plugin {
                 root: userConfig.root || config.root || '.',
                 build,
                 server: {
-                    origin:
-                        userConfig.server?.origin ??
-                        'http://__django_vite_plugin_placeholder__.protibimbok',
+                    origin: userConfig.server?.origin ?? ORIGIN_PLACEHOLDER,
                 },
                 resolve: {
                     alias: Array.isArray(userConfig.resolve?.alias)
@@ -95,10 +97,18 @@ function djangoPlugin(config: InternalConfig): Plugin {
             resolvedConfig = config
         },
         transform(code) {
-            return code.replace(
-                /http:\/\/__django_vite_plugin_placeholder__\.protibimbok/g,
-                resolvedConfig?.command === 'serve' ? viteDevServerUrl : config.appConfig.BUILD_URL_PREFIX,
-            )
+            if (!code.includes(ORIGIN_PLACEHOLDER)) {
+                return null
+            }
+            const url =
+                resolvedConfig?.command === 'serve'
+                    ? viteDevServerUrl
+                    : config.appConfig.BUILD_URL_PREFIX
+
+            return {
+                code: code.split(ORIGIN_PLACEHOLDER).join(url),
+                map: null,
+            }
         },
         configureServer(server) {
             server.httpServer?.once('listening', () => {
