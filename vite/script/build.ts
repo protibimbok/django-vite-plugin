@@ -96,7 +96,12 @@ const main = () => {
   mkdirSync(cjsDir, { recursive: true });
   transpileWithTsConfig(srcDir, cjsDir, {
     ...tsConfig,
-    options: { ...tsConfig.options, module: ts.ModuleKind.CommonJS },
+    options: {
+      ...tsConfig.options,
+      module: ts.ModuleKind.CommonJS,
+      // 'bundler' (tsconfig.json) is not valid for CommonJS output
+      moduleResolution: ts.ModuleResolutionKind.Node10,
+    },
     fileNames: filteredFiles,
   });
 

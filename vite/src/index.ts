@@ -42,14 +42,14 @@ export async function djangoVitePlugin(
 
     config = await resolvePluginConfig(config, appConfig)
     return [
-        djangoPlugin(config as InternalConfig),
+        ...djangoPlugin(config as InternalConfig),
         fullReload(config as InternalConfig),
     ]
 }
 
 let exitHandlersBound = false
 
-function djangoPlugin(config: InternalConfig): Plugin {
+function djangoPlugin(config: InternalConfig): Plugin[] {
     const defaultAliases: Record<string, string> = getAppAliases(
         config.appConfig,
     )
@@ -72,7 +72,7 @@ function djangoPlugin(config: InternalConfig): Plugin {
     })
     let warnedNoOrigin = false
 
-    return {
+    const main: Plugin = {
         name: 'django-vite-plugin',
         enforce: 'pre',
         config: (userConfig: UserConfig, { command }) => {
@@ -101,37 +101,6 @@ function djangoPlugin(config: InternalConfig): Plugin {
                               ...userConfig.resolve?.alias,
                           },
                 },
-            }
-        },
-        configResolved(config) {
-            resolvedConfig = config
-        },
-        async transform(code) {
-            if (!code.includes(ORIGIN_PLACEHOLDER)) {
-                return null
-            }
-            let url: string
-            if (resolvedConfig?.command === 'serve') {
-                // Falling back to '' leaves the URL root-relative, which is
-                // what vite itself emits when no `server.origin` is set.
-                url = (await devServerUrl) ?? ''
-                if (!url && !warnedNoOrigin) {
-                    warnedNoOrigin = true
-                    resolvedConfig.logger.warn(
-                        colors.yellow(
-                            'django-vite-plugin: could not determine the dev server URL, ' +
-                                'so asset URLs are left relative to the page that loads them. ' +
-                                "Set 'server.origin' in vite.config.js to the URL vite is reachable at.",
-                        ),
-                    )
-                }
-            } else {
-                url = config.appConfig.BUILD_URL_PREFIX
-            }
-
-            return {
-                code: code.split(ORIGIN_PLACEHOLDER).join(url),
-                map: null,
             }
         },
         configureServer(server) {
@@ -206,6 +175,48 @@ function djangoPlugin(config: InternalConfig): Plugin {
                 })
         },
     }
+
+    // The placeholder is swapped out in a separate `post` plugin: `vite:css`
+    // rewrites `url()` references with `server.origin` in its own transform,
+    // which runs after every `pre` transform — replacing from `pre` left the
+    // placeholder host in every stylesheet the dev server served (audit #24).
+    const originResolver: Plugin = {
+        name: 'django-vite-plugin-origin-resolver',
+        enforce: 'post',
+        configResolved(config) {
+            resolvedConfig = config
+        },
+        async transform(code) {
+            if (!code.includes(ORIGIN_PLACEHOLDER)) {
+                return null
+            }
+            let url: string
+            if (resolvedConfig?.command === 'serve') {
+                // Falling back to '' leaves the URL root-relative, which is
+                // what vite itself emits when no `server.origin` is set.
+                url = (await devServerUrl) ?? ''
+                if (!url && !warnedNoOrigin) {
+                    warnedNoOrigin = true
+                    resolvedConfig.logger.warn(
+                        colors.yellow(
+                            'django-vite-plugin: could not determine the dev server URL, ' +
+                                'so asset URLs are left relative to the page that loads them. ' +
+                                "Set 'server.origin' in vite.config.js to the URL vite is reachable at.",
+                        ),
+                    )
+                }
+            } else {
+                url = config.appConfig.BUILD_URL_PREFIX
+            }
+
+            return {
+                code: code.split(ORIGIN_PLACEHOLDER).join(url),
+                map: null,
+            }
+        },
+    }
+
+    return [main, originResolver]
 }
 
 function fullReload(config: InternalConfig): Plugin {

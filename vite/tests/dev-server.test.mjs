@@ -9,7 +9,7 @@ import { build, createServer } from 'vite'
 import {
     callTransform,
     createProject,
-    loadPlugin,
+    loadPluginNamed,
     loadPlugins,
     PLACEHOLDER,
     recordingLogger,
@@ -30,14 +30,20 @@ async function startServer(t, plugins, config = {}) {
 
 test('code without the placeholder is left alone', async (t) => {
     createProject(t)
-    const plugin = await loadPlugin({ input: 'blog/main.js' })
+    const plugin = await loadPluginNamed(
+        { input: 'blog/main.js' },
+        'origin-resolver',
+    )
 
     assert.equal(await callTransform(plugin, 'const a = 1'), null)
 })
 
 test('a build resolves the placeholder to the build prefix', async (t) => {
     createProject(t)
-    const plugin = await loadPlugin({ input: 'blog/main.js' })
+    const plugin = await loadPluginNamed(
+        { input: 'blog/main.js' },
+        'origin-resolver',
+    )
 
     const result = await callTransform(plugin, `url("${PLACEHOLDER}/img.png")`)
 
@@ -59,6 +65,34 @@ test('the dev server rewrites asset URLs to its own origin', async (t) => {
         `asset URL was ${result.code}`,
     )
     assert.ok(!result.code.includes(PLACEHOLDER))
+})
+
+test('CSS url() is rewritten to the dev server origin', async (t) => {
+    // The rewrite is done by vite:css, which runs after every `pre`
+    // transform — replacing the placeholder from `pre` missed it (audit #24).
+    const project = createProject(t, {
+        files: {
+            'apps/blog/static/blog/style.css':
+                '.a{background:url("./img.png")}\n',
+        },
+    })
+    const server = await startServer(t, await loadPlugins({ input: 'blog/main.js' }))
+    await server.listen()
+    const base = `http://localhost:${server.config.server.port}`
+    const devServerUrl = project.read('hot')
+
+    // As a `<link>` tag loads it, and as a JS module import.
+    for (const accept of ['text/css', '*/*']) {
+        const res = await fetch(`${base}/apps/blog/static/blog/style.css`, {
+            headers: { accept },
+        })
+        const css = await res.text()
+        assert.ok(
+            css.includes(`${devServerUrl}/apps/blog/static/blog/img.png`),
+            `served CSS (${accept}) was ${css}`,
+        )
+        assert.ok(!css.includes(PLACEHOLDER))
+    }
 })
 
 test('a transform that starts before the server is listening waits for it', async (t) => {
@@ -143,7 +177,10 @@ test('a build emits the entry and leaves the placeholder nowhere', async (t) => 
 
 test('the reloader watches the files Django named and reloads on a change', async (t) => {
     createProject(t)
-    const [, reloader] = await loadPlugins({ input: 'blog/main.js', delay: 0 })
+    const reloader = await loadPluginNamed(
+        { input: 'blog/main.js', delay: 0 },
+        'reloader',
+    )
 
     const watcher = new EventEmitter()
     watcher.add = (file) => (watcher.added ??= []).push(file)
@@ -160,6 +197,9 @@ test('the reloader watches the files Django named and reloads on a change', asyn
 
 test('the reloader can be turned off', async (t) => {
     createProject(t)
-    const [, reloader] = await loadPlugins({ input: 'blog/main.js', reloader: false })
+    const reloader = await loadPluginNamed(
+        { input: 'blog/main.js', reloader: false },
+        'reloader',
+    )
     assert.equal(reloader.configureServer, undefined)
 })

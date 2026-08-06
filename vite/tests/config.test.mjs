@@ -18,7 +18,7 @@ test('a string input is accepted as the entry', { skip: process.platform === 'wi
 
     const plugins = await loadPlugins('blog/main.js')
 
-    assert.equal(plugins.length, 2)
+    assert.equal(plugins.length, 3)
     assert.deepEqual(callConfigHook(plugins[0]).build.rollupOptions.input, [
         'apps/blog/static/blog/main.js',
     ])

@@ -90,6 +90,16 @@ export async function loadPlugin(config) {
     return (await loadPlugins(config))[0]
 }
 
+/** One plugin of the set, picked by the suffix of its name. */
+export async function loadPluginNamed(config, suffix) {
+    const plugins = await loadPlugins(config)
+    const plugin = plugins.find((p) => p.name.endsWith(suffix))
+    if (!plugin) {
+        throw new Error(`no plugin named *${suffix}`)
+    }
+    return plugin
+}
+
 /** Runs a plugin's `config` hook the way vite does. */
 export function callConfigHook(plugin, userConfig = {}, command = 'serve') {
     const hook = plugin.config.handler ?? plugin.config
