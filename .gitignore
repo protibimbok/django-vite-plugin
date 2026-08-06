@@ -4,3 +4,4 @@ venv
 /**/__pycache__
 /**/node_modules
 /**/*.sqlite3
+/**/.pytest_cache

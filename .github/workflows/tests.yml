@@ -1,0 +1,73 @@
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_call:
+
+jobs:
+  django:
+    name: django ${{ matrix.django }} on python ${{ matrix.python }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The floor declared in pyproject.toml, on the oldest supported LTS.
+          - { os: ubuntu-latest, python: "3.9", django: "~=4.2.0" }
+          - { os: ubuntu-latest, python: "3.12", django: "~=5.2.0" }
+          - { os: ubuntu-latest, python: "3.13", django: "" }
+          # The manifest and hot file are read with an explicit encoding
+          # because Windows does not default to UTF-8.
+          - { os: windows-latest, python: "3.13", django: "" }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install
+        working-directory: django
+        run: pip install ".[test]" "Django${{ matrix.django }}"
+
+      - name: Test
+        working-directory: django
+        run: pytest -q
+
+  vite:
+    name: vite plugin on node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The build transpiles TypeScript with `--experimental-strip-types`,
+        # which needs node 22 or newer.
+        node: ["22", "24"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # The plugin asks Django for its configuration by running `manage.py`;
+      # the tests answer with a stub, but they still need an interpreter.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install
+        working-directory: vite
+        run: pnpm install
+
+      - name: Test
+        working-directory: vite
+        run: pnpm test

@@ -17,6 +17,19 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
+[project.optional-dependencies]
+test = [
+    "Django>=4.2",
+    "pytest>=7",
+]
+
 [project.urls]
 "Homepage" = "https://github.com/protibimbok/django-vite-plugin"
 "Bug Tracker" = "https://github.com/protibimbok/django-vite-plugin/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/django_vite_plugin"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["error"]

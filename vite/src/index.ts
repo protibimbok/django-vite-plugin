@@ -58,9 +58,19 @@ function djangoPlugin(config: InternalConfig): Plugin {
         writeAliases(config, defaultAliases, config.addAliases === true)
     }
 
-    let viteDevServerUrl: DevServerUrl
     let userConfigG: UserConfig
     let resolvedConfig: ResolvedConfig
+
+    // The dev server URL is only known once the server is listening, but
+    // `transform` may run before that — and in middleware mode there is no
+    // server of vite's own to listen at all. So `transform` waits on this
+    // promise rather than reading a variable that may still be unset; it
+    // resolves to `undefined` when the URL cannot be known.
+    let setDevServerUrl!: (url: DevServerUrl | undefined) => void
+    const devServerUrl = new Promise<DevServerUrl | undefined>((resolve) => {
+        setDevServerUrl = resolve
+    })
+    let warnedNoOrigin = false
 
     return {
         name: 'django-vite-plugin',
@@ -96,14 +106,28 @@ function djangoPlugin(config: InternalConfig): Plugin {
         configResolved(config) {
             resolvedConfig = config
         },
-        transform(code) {
+        async transform(code) {
             if (!code.includes(ORIGIN_PLACEHOLDER)) {
                 return null
             }
-            const url =
-                resolvedConfig?.command === 'serve'
-                    ? viteDevServerUrl
-                    : config.appConfig.BUILD_URL_PREFIX
+            let url: string
+            if (resolvedConfig?.command === 'serve') {
+                // Falling back to '' leaves the URL root-relative, which is
+                // what vite itself emits when no `server.origin` is set.
+                url = (await devServerUrl) ?? ''
+                if (!url && !warnedNoOrigin) {
+                    warnedNoOrigin = true
+                    resolvedConfig.logger.warn(
+                        colors.yellow(
+                            'django-vite-plugin: could not determine the dev server URL, ' +
+                                'so asset URLs are left relative to the page that loads them. ' +
+                                "Set 'server.origin' in vite.config.js to the URL vite is reachable at.",
+                        ),
+                    )
+                }
+            } else {
+                url = config.appConfig.BUILD_URL_PREFIX
+            }
 
             return {
                 code: code.split(ORIGIN_PLACEHOLDER).join(url),
@@ -111,18 +135,27 @@ function djangoPlugin(config: InternalConfig): Plugin {
             }
         },
         configureServer(server) {
+            if (!server.httpServer) {
+                // Middleware mode: the server vite is mounted in is the one
+                // with an origin, and only the user can tell us what it is.
+                setDevServerUrl(undefined)
+            }
             server.httpServer?.once('listening', () => {
                 const address = server.httpServer?.address()
 
                 const isAddressInfo = (
                     x: string | AddressInfo | null | undefined,
                 ): x is AddressInfo => typeof x === 'object'
-                if (isAddressInfo(address)) {
-                    viteDevServerUrl = resolveDevServerUrl(
+                if (!isAddressInfo(address)) {
+                    // A pipe or unix socket has no host:port to hand out.
+                    setDevServerUrl(undefined)
+                } else {
+                    const viteDevServerUrl = resolveDevServerUrl(
                         address,
                         server.config,
                         userConfigG,
                     )
+                    setDevServerUrl(viteDevServerUrl)
                     fs.writeFileSync(
                         config.appConfig.HOT_FILE,
                         viteDevServerUrl,

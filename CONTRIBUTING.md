@@ -15,13 +15,15 @@ django-vite-plugin/
 │   │       ├── management/      # CLI commands
 │   │       ├── config_helper.py # Configuration handling
 │   │       ├── manifest.py      # Build manifest parsing
-│   │       └── html.py          # HTML tag generation
+│   │       └── utils.py         # Asset lookup and HTML tag generation
+│   ├── tests/                   # pytest suite
 │   └── pyproject.toml
 ├── vite/                   # JavaScript package (npm)
 │   ├── src/
 │   │   ├── index.ts        # Plugin entry point
 │   │   ├── config.ts       # Configuration resolution
 │   │   └── helpers.ts      # Utility functions
+│   ├── tests/              # node:test suite
 │   └── package.json
 └── example/                # Example projects
     ├── output/             # Basic example with Tailwind
@@ -153,6 +155,37 @@ With the editable install (`pip install -e .`), Python changes take effect immed
 
 ## Testing
 
+Both packages have a test suite, and both run in CI on every push and pull
+request. A release cannot publish unless they pass.
+
+### Django package
+
+```sh
+cd django
+pip install -e ".[test]"
+pytest
+```
+
+The suite needs no database and no example project: it configures Django
+itself and builds whatever project layout a test needs in a temporary
+directory. Because the plugin reads settings at *import* time, tests ask the
+`plugin` fixture for a fresh copy of the package under the settings they care
+about - see `django/tests/conftest.py`.
+
+### Vite plugin
+
+```sh
+cd vite
+pnpm test          # builds first, then runs the suite
+```
+
+The tests drive the real plugin against real Vite dev servers and builds. They
+talk to a stub `manage.py` (`vite/tests/fixtures/manage.py`) that speaks the
+plugin's JSON protocol, so no Django install is needed - but a `python3` on
+PATH is. `smoke.test.mjs` loads the built package through both entry points of
+its `exports` map, which is the check that a published artifact is loadable at
+all.
+
 ### Manual Testing
 
 Each example project tests different scenarios:
@@ -194,9 +227,9 @@ DEV_MODE=False python manage.py runserver
 ### Fixing a Bug
 
 1. Create a bug fix branch: `git checkout -b fix/issue-description`
-2. Add a test case to an example project that reproduces the bug
+2. Add a failing test to `django/tests/` or `vite/tests/` that reproduces it
 3. Implement the fix
-4. Verify the fix works across affected example projects
+4. Check the new test passes and the rest of the suite still does
 5. Submit a pull request referencing the issue
 
 ### Updating Dependencies
