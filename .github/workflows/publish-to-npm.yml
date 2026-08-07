@@ -4,6 +4,9 @@ on:
   release:
     types: [created]
 
+permissions:
+  contents: read
+
 jobs:
   # Nothing reaches npm that has not been built and tested first.
   tests:
@@ -13,27 +16,43 @@ jobs:
     needs: tests
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      # npm trades this token for a short-lived publish credential; without
+      # it there is nothing to authenticate the release with.
+      id-token: write
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
           registry-url: "https://registry.npmjs.org/"
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10
+      # pnpm cannot perform the OIDC exchange, so npm publishes the package.
+      # Trusted publishing needs npm 11.5.1 or newer, and node 22 still
+      # bundles npm 10.
+      - name: Upgrade npm
+        run: npm install -g npm@latest
 
+      # The workspace also contains the example projects; only the plugin's
+      # dependencies are needed to build it.
       - name: Install dependencies
         run: pnpm install --filter django-vite-plugin
 
-      - name: Build and Publish
-        run: |
-          pnpm build
-          pnpm --filter django-vite-plugin publish --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+      - name: Build
+        run: pnpm build
+
+      # No NODE_AUTH_TOKEN: npm reads the OIDC token out of the environment
+      # and authenticates itself. Provenance is attested automatically.
+      - name: Publish
+        run: npm publish
+        working-directory: vite
