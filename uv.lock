@@ -106,7 +106,7 @@ wheels = [
 
 [[package]]
 name = "django-vite-plugin"
-version = "4.1.2"
+version = "5.0.0"
 source = { editable = "django" }
 
 [package.optional-dependencies]
