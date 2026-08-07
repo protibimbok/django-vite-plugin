@@ -11,7 +11,8 @@
     "homepage": "https://github.com/protibimbok/django-vite-plugin#readme",
     "repository": {
         "type": "git",
-        "url": "https://github.com/protibimbok/django-vite-plugin"
+        "url": "https://github.com/protibimbok/django-vite-plugin",
+        "directory": "vite"
     },
     "license": "MIT",
     "author": {
