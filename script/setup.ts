@@ -104,15 +104,14 @@ function discoverManagePys(): Map<string, string> {
 }
 
 function printRunInstructions(installer: string): void {
-    const py = installer === 'uv' ? 'uv run' : 'python'
     const vite = installer === 'uv' ? 'uv run pnpm' : 'pnpm'
 
     console.log()
-    console.log(color('1', 'To run an example (two terminals, from this directory):'))
-    for (const [name, managePy] of discoverManagePys()) {
-        console.log(`  ${name}:`)
-        console.log(`    ${py} ${managePy} runserver`)
-        console.log(`    ${vite} dev ${name}`)
+    console.log(
+        color('1', 'To run an example (starts Django + Vite together, from this directory):'),
+    )
+    for (const name of discoverManagePys().keys()) {
+        console.log(`  ${vite} dev ${name}`)
     }
     console.log()
     console.log(color('1', 'Tests:'))

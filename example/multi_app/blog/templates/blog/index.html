@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load vite %}
+
+{% block title %}Blog · multi_app{% endblock %}
+
+{% block assets %}
+    {# This app's own entries — resolved to blog/static/blog/... #}
+    {% vite 'blog/js/main.ts' 'blog/css/main.css' %}
+{% endblock %}
+
+{% block page %}
+<main>
+    <h1>Blog</h1>
+    <p>Posts are rendered by <code>blog/js/main.ts</code>:</p>
+    <ul id="posts"></ul>
+</main>
+{% endblock %}

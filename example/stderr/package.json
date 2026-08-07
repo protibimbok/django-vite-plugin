@@ -1,18 +1,15 @@
 {
     "name": "example-stderr",
     "private": true,
-    "version": "0.0.1",
-    "scripts": {
-        "dev": "vite",
-        "build": "vite build",
-        "link:w-py": "cmd /c mklink /j \".\\django_vite_plugin\" \"..\\..\\django\\src\\django_vite_plugin\""
-    },
     "type": "module",
-    "devDependencies": {
-        "@vitejs/plugin-vue": "^6.0.0",
-        "django-vite-plugin": "file:../../vite"
+    "scripts": {
+        "dev": "concurrently -k -n django,vite -c blue,green \"python manage.py runserver\" \"vite\"",
+        "dev:vite": "vite",
+        "build": "vite build"
     },
-    "dependencies": {
+    "devDependencies": {
+        "concurrently": "^9.2.0",
+        "django-vite-plugin": "file:../../vite",
         "vite": "^7.1.5"
     }
 }

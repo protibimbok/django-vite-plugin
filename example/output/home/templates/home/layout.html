@@ -1,0 +1,18 @@
+{% load vite %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}django-vite-plugin{% endblock %}</title>
+
+    {# Vite client — enables HMR in dev mode #}
+    {% vite %}
+    {# This app's entry points, resolved through the static file lookup #}
+    {% vite 'home/js/app.js' 'home/css/main.css' %}
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-slate-100 text-slate-800">
+    {% block page %}{% endblock %}
+</body>
+</html>

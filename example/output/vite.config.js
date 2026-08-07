@@ -1,20 +1,17 @@
-import { defineConfig } from 'vite'
+import tailwindcss from '@tailwindcss/vite'
 import { djangoVitePlugin } from 'django-vite-plugin'
-import vue from '@vitejs/plugin-vue'
-import glob from 'glob'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
     plugins: [
-        vue(),
-        djangoVitePlugin({
-            input:[
-                'home/js/app.js',
-                'home/css/tailwind.css',
-
-                //index.html
-                'another_app/js/one.js',
-                ...glob.sync('static/**/*.{js,css}'),
-            ]
-        })
+        tailwindcss(),
+        djangoVitePlugin([
+            'home/js/app.js',
+            'home/css/main.css',
+            'another_app/js/one.js',
+            'static/static.js',
+            'static/dynamic.js',
+            'static/dynamic.css',
+        ]),
     ],
-});
+})

@@ -1,0 +1,25 @@
+{% load vite %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>stderr example — it works</title>
+
+    {% vite %}
+    {% vite 'home/js/main.js' %}
+</head>
+<body>
+    <main style="max-width: 36rem; margin: 4rem auto; font-family: system-ui, sans-serif;">
+        <h1>It works</h1>
+        <p>
+            If you can read this — and the script below ran — the plugin
+            started fine even though every <code>manage.py</code> call in
+            this project prints a warning to stderr
+            (<code>stderr_example.W001</code>, registered in
+            <code>home/checks.py</code>).
+        </p>
+        <p id="proof" style="font-weight: 600;"></p>
+    </main>
+</body>
+</html>

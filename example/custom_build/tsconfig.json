@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "types": ["vite/client"],
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@s:frontend/*": [
+        "./frontend/static/frontend/*"
+      ],
+      "@t:frontend/*": [
+        "./frontend/templates/frontend/*"
+      ]
+    }
+  },
+  "include": ["frontend/static/**/*"],
+  "exclude": ["node_modules"]
+}

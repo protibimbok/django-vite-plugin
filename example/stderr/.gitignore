@@ -1,0 +1,2 @@
+# Default BUILD_DIR (this example sets no DJANGO_VITE_PLUGIN config)
+/static/

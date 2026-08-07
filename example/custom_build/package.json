@@ -1,0 +1,16 @@
+{
+    "name": "example-custom-build",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "concurrently -k -n django,vite -c blue,green \"python manage.py runserver\" \"vite\"",
+        "dev:vite": "vite",
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "concurrently": "^9.2.0",
+        "django-vite-plugin": "file:../../vite",
+        "typescript": "~5.7.2",
+        "vite": "^7.1.5"
+    }
+}

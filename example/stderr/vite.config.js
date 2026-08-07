@@ -1,14 +1,10 @@
-import { defineConfig } from 'vite'
 import { djangoVitePlugin } from 'django-vite-plugin'
-import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
     plugins: [
-        vue(),
-        djangoVitePlugin({
-            input:[
-                'home/app.js',
-            ]
-        })
+        djangoVitePlugin([
+            'home/js/main.js',
+        ]),
     ],
-});
+})

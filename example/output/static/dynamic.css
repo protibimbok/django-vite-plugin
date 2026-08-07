@@ -1,0 +1,7 @@
+/* Referenced from the view context, not hardcoded in any template. */
+.dynamic-note {
+    border: 2px solid #059669;
+    background: #ecfdf5;
+    color: #065f46;
+    font-weight: 600;
+}

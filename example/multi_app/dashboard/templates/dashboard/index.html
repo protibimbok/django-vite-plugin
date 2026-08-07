@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% load vite %}
+
+{% block title %}Dashboard · multi_app{% endblock %}
+
+{% block assets %}
+    {# This app's entry; the blog page loads its own CSS, this one reuses it #}
+    {% vite 'dashboard/js/main.ts' 'blog/css/main.css' %}
+{% endblock %}
+
+{% block page %}
+<main>
+    <h1>Dashboard</h1>
+    <p id="summary">Rendered by <code>dashboard/js/main.ts</code>…</p>
+</main>
+{% endblock %}

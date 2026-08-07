@@ -26,12 +26,12 @@ django-vite-plugin/
 │   ├── tests/              # node:test suite
 │   └── package.json
 ├── example/                # Example projects
-│   ├── output/             # Basic example with Tailwind
-│   ├── react/              # React integration
-│   ├── multi_app/          # Multiple Django apps
-│   ├── custom_build/       # Custom build directory
-│   ├── svelte-in-different-dir/  # Svelte with separate frontend
-│   └── stderr/             # Edge case testing
+│   ├── output/             # The {% vite %} tag, input & output (Tailwind)
+│   ├── react/              # React + TypeScript integration
+│   ├── multi_app/          # Multiple Django apps, each with its own assets
+│   ├── custom_build/       # Custom build directory + build command
+│   ├── svelte-in-different-dir/  # Svelte frontend in its own directory
+│   └── stderr/             # Regression check: stderr noise tolerance
 ├── script/                 # Repo tooling (setup.ts bootstraps, example.ts runs examples)
 ├── pyproject.toml          # uv workspace + root pytest config
 ├── package.json            # root scripts (bootstrap, build, test, lint, dev, e:build)
@@ -109,19 +109,18 @@ With the editable install, Python changes take effect immediately without reinst
 
 ### Testing Changes
 
-1. Start an example project (two terminals, both from the repo root):
+1. Start an example project (one terminal, from the repo root):
 
     ```sh
-    # Terminal 1: Django
-    uv run example/output/manage.py runserver   # or: python example/output/manage.py runserver
-
-    # Terminal 2: Vite
     uv run pnpm dev output
     ```
 
-    (`uv run` puts the workspace `.venv` on PATH so the Vite plugin finds a
-    Python that has Django installed. With pip, activate your environment
-    instead.)
+    The `dev` script uses `concurrently` to start the Django dev server and
+    Vite together; Ctrl+C stops both. (`uv run` puts the workspace `.venv`
+    on PATH so both `manage.py` and the Vite plugin find a Python that has
+    Django installed. With pip, activate your environment instead. To run
+    the servers separately: `manage.py runserver` + the example's
+    `dev:vite` script.)
 
     `pnpm dev` and `pnpm e:build` work for every example; leave the name
     off to get a list to pick from.
@@ -180,14 +179,15 @@ Each example project tests different scenarios:
 
 | Example | Tests |
 |---------|-------|
-| `output` | Basic setup, Tailwind CSS, multiple apps |
-| `react` | React integration with JSX/TSX |
-| `multi_app` | Multiple Django apps with separate static files |
-| `custom_build` | Custom build output directory |
-| `svelte-in-different-dir` | Vite config in separate directory |
-| `stderr` | Error handling and edge cases |
+| `output` | Every form of the `{% vite %}` tag, static lookup, Tailwind CSS |
+| `react` | React Fast Refresh (`{% vite 'react' %}`) and `@t:` aliases |
+| `multi_app` | Multiple Django apps with per-app entries and cross-app imports |
+| `custom_build` | Custom `BUILD_DIR`/`BUILD_URL_PREFIX`, `manage.py buildfrontend` |
+| `svelte-in-different-dir` | Standalone frontend directory, `STATIC_LOOKUP: False` |
+| `stderr` | Django warnings on stderr must not break the plugin |
 
-When making changes, test with relevant example projects.
+Each example has a README explaining what it demonstrates. When making
+changes, test with relevant example projects.
 
 ### Build Testing
 

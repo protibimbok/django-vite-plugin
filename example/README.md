@@ -17,30 +17,33 @@ everything.
 
 ## Available Examples
 
+Each example demonstrates one aspect of the plugin and has its own README.
+
 | Example | Description |
 |---------|-------------|
-| `output` | Basic setup with Tailwind CSS and multiple apps |
-| `react` | React integration with TypeScript |
-| `multi_app` | Multiple Django apps with separate static files |
-| `custom_build` | Custom build output directory configuration |
-| `svelte-in-different-dir` | Svelte with Vite config in a separate frontend directory |
-| `stderr` | Edge case and error handling tests |
+| `output` | Every form of the `{% vite %}` tag next to the HTML it renders — static lookup, multiple apps, dynamic paths, Tailwind CSS |
+| `react` | React 19 + TypeScript with Fast Refresh (`{% vite 'react' %}`) |
+| `multi_app` | Multiple Django apps, each with its own entries, plus cross-app imports |
+| `custom_build` | Custom build directory and URL prefix, `manage.py buildfrontend` |
+| `svelte-in-different-dir` | Svelte 5 frontend living in its own directory next to Django |
+| `stderr` | Regression check: Django warnings on stderr must not break the plugin |
 
 ## Running an Example
 
-Two terminals, both from the project root (with pip, activate your
-environment and use `python` instead of `uv run`):
+One terminal, from the project root (with pip, activate your environment
+and drop the `uv run`):
 
 ```sh
-# Terminal 1 - Django
-uv run example/output/manage.py runserver
-
-# Terminal 2 - Vite
 uv run pnpm dev output
 ```
 
+Each example's `dev` script uses `concurrently` to start the Django dev
+server and Vite together — Django on http://localhost:8000, Vite on :5173.
+Stopping it (Ctrl+C) stops both.
+
 `pnpm dev <name>` and `pnpm e:build <name>` work for every example; leave
-the name off to get a list to pick from.
+the name off to get a list to pick from. To run the servers separately,
+use `manage.py runserver` and the example's `dev:vite` script.
 
 ## Manual Setup
 
@@ -71,3 +74,6 @@ Each example links to the local Vite plugin for development. To test with the pu
    uv run pnpm e:build output
    DEV_MODE=False uv run example/output/manage.py runserver
    ```
+
+   Every example (except `stderr`, which is dev-only) reads the `DEV_MODE`
+   environment variable in its settings, so this flow works for all of them.

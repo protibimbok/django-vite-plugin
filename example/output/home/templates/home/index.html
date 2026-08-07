@@ -1,0 +1,72 @@
+{% extends 'home/layout.html' %}
+{% load vite demo %}
+
+{% block title %}django-vite-plugin — input &amp; output{% endblock %}
+
+{% block head %}
+    {# The demo tags below are also loaded for real, so the page runs them: #}
+    {# check the browser console and the highlighted box at the bottom. #}
+    {% vite 'another_app/js/one.js' data-app='another_app' %}
+    {% vite dyn_js dyn_css data-note=dyn_attr %}
+{% endblock %}
+
+{% block page %}
+<main class="mx-auto max-w-3xl px-6 py-12">
+    <h1 class="text-3xl font-bold tracking-tight">
+        <code>{% templatetag openblock %} vite {% templatetag closeblock %}</code>
+        — input &amp; output
+    </h1>
+    <p class="mt-3 text-slate-600">
+        Each row shows a template tag and the exact HTML it rendered on this
+        request. Run it with the Vite dev server and again with
+        <code class="font-mono text-sm">DEV_MODE=False</code> after a build to
+        see both outputs.
+    </p>
+
+    <section class="mt-10">
+        <h2 class="text-lg font-semibold">App asset via static lookup</h2>
+        <p class="mt-1 text-sm text-slate-600">
+            <code>home/js/app.js</code> resolves to
+            <code>home/static/home/js/app.js</code>.
+        </p>
+        <pre class="mt-3 overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-emerald-300">{% verbatim %}{% vite 'home/js/app.js' %}{% endverbatim %}</pre>
+        <pre class="mt-2 overflow-x-auto rounded-lg bg-white p-4 text-sm text-slate-700 ring-1 ring-slate-200">{% showhtml %}{% vite 'home/js/app.js' %}{% endshowhtml %}</pre>
+    </section>
+
+    <section class="mt-10">
+        <h2 class="text-lg font-semibold">Another app, custom attributes</h2>
+        <p class="mt-1 text-sm text-slate-600">
+            Any app can contribute entries. Extra attributes are passed
+            through; a <code>True</code> value renders as a bare attribute.
+        </p>
+        <pre class="mt-3 overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-emerald-300">{% verbatim %}{% vite 'another_app/js/one.js' data-app='another_app' nomodule=False async=True %}{% endverbatim %}</pre>
+        <pre class="mt-2 overflow-x-auto rounded-lg bg-white p-4 text-sm text-slate-700 ring-1 ring-slate-200">{% showhtml %}{% vite 'another_app/js/one.js' data-app='another_app' nomodule=False async=True %}{% endshowhtml %}</pre>
+    </section>
+
+    <section class="mt-10">
+        <h2 class="text-lg font-semibold">Project-level static file</h2>
+        <p class="mt-1 text-sm text-slate-600">
+            Files outside any app work too — <code>static/</code> here is a
+            prefixed <code>STATICFILES_DIRS</code> entry.
+        </p>
+        <pre class="mt-3 overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-emerald-300">{% verbatim %}{% vite 'static/static.js' %}{% endverbatim %}</pre>
+        <pre class="mt-2 overflow-x-auto rounded-lg bg-white p-4 text-sm text-slate-700 ring-1 ring-slate-200">{% showhtml %}{% vite 'static/static.js' %}{% endshowhtml %}</pre>
+    </section>
+
+    <section class="mt-10">
+        <h2 class="text-lg font-semibold">Dynamic paths and attributes</h2>
+        <p class="mt-1 text-sm text-slate-600">
+            Paths and attribute values can be template variables — these come
+            from the view context.
+        </p>
+        <pre class="mt-3 overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-emerald-300">{% verbatim %}{% vite dyn_js dyn_css data-note=dyn_attr %}{% endverbatim %}</pre>
+        <pre class="mt-2 overflow-x-auto rounded-lg bg-white p-4 text-sm text-slate-700 ring-1 ring-slate-200">{% showhtml %}{% vite dyn_js dyn_css data-note=dyn_attr %}{% endshowhtml %}</pre>
+    </section>
+
+    <div id="dynamic-note" class="mt-10 rounded-lg border-2 border-dashed border-slate-300 p-4 text-sm">
+        Waiting for <code>static/dynamic.js</code>…
+    </div>
+
+    <footer id="stamp" class="mt-10 text-sm text-slate-500"></footer>
+</main>
+{% endblock %}

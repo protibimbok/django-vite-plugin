@@ -1,9 +1,12 @@
-import { defineConfig } from "vite";
-import { djangoVitePlugin } from "django-vite-plugin";
-
+import { djangoVitePlugin } from 'django-vite-plugin'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
-    plugins: [djangoVitePlugin({
-        input: ["static/js/main.ts"]
-    })]
-});
+    plugins: [
+        djangoVitePlugin([
+            'blog/js/main.ts',
+            'blog/css/main.css',
+            'dashboard/js/main.ts',
+        ]),
+    ],
+})

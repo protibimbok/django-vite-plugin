@@ -1,21 +1,19 @@
 {
-  "name": "example-svelte",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json"
-  },
-  "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^6.2.0",
-    "@tsconfig/svelte": "^5.0.4",
-    "svelte": "^5.20.2",
-    "svelte-check": "^4.1.4",
-    "typescript": "~5.7.2",
-    "vite": "^7.1.5",
-    "django-vite-plugin": "file:../../../vite"
-  }
+    "name": "example-svelte",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "concurrently -k -n django,vite -c blue,green \"python ../manage.py runserver\" \"vite\"",
+        "dev:vite": "vite",
+        "build": "vite build"
+    },
+    "devDependencies": {
+        "@sveltejs/vite-plugin-svelte": "^6.2.0",
+        "@tsconfig/svelte": "^5.0.4",
+        "concurrently": "^9.2.0",
+        "django-vite-plugin": "file:../../../vite",
+        "svelte": "^5.20.2",
+        "typescript": "~5.7.2",
+        "vite": "^7.1.5"
+    }
 }
