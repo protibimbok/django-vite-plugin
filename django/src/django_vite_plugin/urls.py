@@ -3,7 +3,6 @@ from urllib.parse import urlsplit
 from django.conf import settings
 from django.conf.urls.static import static
 from .config_helper import get_config
-from .constants import BASE_DIR
 
 CONFIG = get_config()
 
@@ -35,5 +34,5 @@ if not CONFIG['DEV_MODE']:
     else:
         urlpatterns = static(
             prefix,
-            document_root=BASE_DIR / CONFIG['BUILD_DIR'],
+            document_root=CONFIG['BUILD_DIR'],
         )

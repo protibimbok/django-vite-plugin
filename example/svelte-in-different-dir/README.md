@@ -11,8 +11,8 @@ What it demonstrates:
   `manage.py`
 - **`STATIC_LOOKUP: False`** — entries are addressed exactly as Vite sees
   them (`{% vite 'src/main.ts' %}`), with no Django app path rewriting
-- **An absolute `BUILD_DIR`** — required when the Vite root is not the
-  Django root, so both sides agree on where the build lands
+- **An absolute `BUILD_DIR`** — spelling the build directory out keeps it
+  obvious where the build lands when the two roots differ
 - **Svelte + `vitePreprocess`** alongside `djangoVitePlugin`
 
 ## Run it

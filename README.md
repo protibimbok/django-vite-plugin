@@ -148,10 +148,13 @@ DJANGO_VITE_PLUGIN = {
     # Use Vite dev server (default: DEBUG)
     'DEV_MODE': True,
 
-    # Build output directory (default: STATIC_ROOT or 'static')
+    # Build output directory (default: STATIC_ROOT or 'static').
+    # A relative path is resolved against BASE_DIR, never the working
+    # directory, and Vite is given the resolved path.
     'BUILD_DIR': 'static',
 
-    # URL prefix for built assets (default: STATIC_URL)
+    # URL prefix for built assets (default: STATIC_URL).
+    # Required: set this or STATIC_URL.
     'BUILD_URL_PREFIX': '/static/',
 
     # Enable static file path resolution (default: True)

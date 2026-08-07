@@ -23,12 +23,13 @@ def get_installed_apps() -> Dict[str, str]:
     }
 
 def format_config_for_output(config: Dict) -> Dict:
-    """Format configuration for JSON output."""
-    if isinstance(config["BUILD_DIR"], str):
-        config["BUILD_DIR"] = config["BUILD_DIR"].strip("/\\")
-    else:
-        config["BUILD_DIR"] = str(config["BUILD_DIR"])
-    
+    """Format configuration for JSON output.
+
+    The paths go out absolute. Vite resolves a relative `outDir` against its own
+    root, which is not always BASE_DIR - handing it the path Django itself
+    resolved is what keeps the two sides looking at the same directory.
+    """
+    config["BUILD_DIR"] = str(config["BUILD_DIR"])
     config['MANIFEST'] = str(config['MANIFEST'])
     config['INSTALLED_APPS'] = get_installed_apps()
     config['DJANGO_VERSION'] = django.get_version()

@@ -43,8 +43,9 @@ DJANGO_VITE_PLUGIN = {
     # like 'src/main.ts' — turn off the Django static file lookup.
     'STATIC_LOOKUP': False,
 
-    # Vite resolves a relative BUILD_DIR against its own root (frontend/),
-    # Django against BASE_DIR — an absolute path keeps them in agreement.
+    # A relative BUILD_DIR would work here too — it is resolved against
+    # BASE_DIR and handed to Vite already resolved — but naming the directory
+    # outright is clearer when the Vite root (frontend/) is not the Django one.
     'BUILD_DIR': BASE_DIR / 'build',
     'BUILD_URL_PREFIX': '/build/',
 }
