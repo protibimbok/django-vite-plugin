@@ -4,6 +4,7 @@ Covers audit #2 (cross-request attribute leak), #3 (HTML escaping) and #14
 (malformed tags).
 """
 
+import builtins
 import os
 import threading
 
@@ -172,6 +173,31 @@ def test_a_restart_within_one_timestamp_tick_is_noticed_too(
     os.utime(path, (0, 0))
 
     assert f"{restarted_to}/js/app.js" in template.render(Context())
+
+
+def test_a_render_reads_the_hot_file_once_however_many_assets(plugin, hot_file):
+    """The read is per render, so a Vite restart is noticed. Per *asset* it was
+    a syscall for every argument of every tag on every page."""
+    hot_file("http://localhost:5173")
+    p = plugin(DEBUG=True)
+    template = p.engine().from_string(
+        "{% load vite %}{% vite 'a.js' 'b.js' 'c.css' %}"
+    )
+    template.render(Context())
+
+    opened = []
+    real = builtins.open
+    builtins.open = lambda file, *a, **kw: (
+        opened.append(str(file)) or real(file, *a, **kw)
+    )
+    try:
+        template.render(Context())
+    finally:
+        builtins.open = real
+
+    assert [f for f in opened if f.endswith(".hotfile")] == [
+        str(p.utils.CONFIG["HOT_FILE"])
+    ]
 
 
 def test_a_parsed_template_picks_up_a_file_created_later(plugin, hot_file, tmp_path):

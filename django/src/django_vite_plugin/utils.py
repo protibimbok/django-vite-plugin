@@ -9,7 +9,7 @@ from urllib.parse import urljoin
 from .config_helper import get_config
 from .constants import BASE_DIR, IS_CSS
 from . import cache
-from .cache import FOUND_FILES_CACHE, DEV_SERVER
+from .cache import FOUND_FILES_CACHE
 from .manifest import get_manifest_entry, load_manifest
 
 CONFIG = get_config()
@@ -113,14 +113,20 @@ def _dev_url(dev_server: str, path: str) -> str:
     return f'{dev_server}/@fs/{absolute.lstrip("/")}'
 
 
-def get_html_dev(url: str, attrs: Dict[str, str]) -> str:
-    global DEV_SERVER
-    if DEV_SERVER is None:
-        try:
-            with open(CONFIG['HOT_FILE'], 'r') as hotfile:
-                DEV_SERVER = hotfile.read()
-        except:
-            raise Exception("Vite dev server is not started!")
+def get_dev_server() -> str:
+    try:
+        with open(CONFIG['HOT_FILE'], 'r', encoding='utf-8') as hotfile:
+            cache.DEV_SERVER = hotfile.read().strip()
+    except OSError:
+        cache.DEV_SERVER = None
+        raise Exception("Vite dev server is not started!")
+    return cache.DEV_SERVER
+
+
+def get_html_dev(
+    url: str, attrs: Dict[str, str], dev_server: Optional[str] = None
+) -> str:
+    DEV_SERVER = get_dev_server() if dev_server is None else dev_server
     if IS_CSS.search(url):
         return _link(_dev_url(DEV_SERVER, url), attrs['css'])
     elif url == 'react':

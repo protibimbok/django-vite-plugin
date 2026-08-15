@@ -6,6 +6,7 @@ from ..utils import (
     CONFIG,
     PendingAsset,
     get_from_manifest,
+    get_dev_server,
     get_html_dev,
     make_attrs,
     resolve_asset,
@@ -99,7 +100,10 @@ def parse_template_args(
 def make_template_assets(assets: List[str], attrs: Dict[str, str]) -> str:
     """Render every asset of one tag, as one run."""
     if CONFIG['DEV_MODE']:
-        return ''.join(get_html_dev(asset, attrs) for asset in assets)
+        if not assets:
+            return ''
+        dev_server = get_dev_server()
+        return ''.join(get_html_dev(asset, attrs, dev_server) for asset in assets)
 
     seen_imports: Set[str] = set()
     seen_css: Set[str] = set()
