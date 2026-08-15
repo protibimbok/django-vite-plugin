@@ -1,10 +1,10 @@
 import { spawn } from 'child_process'
 import fs from 'fs'
 import path from 'path'
-import { ResolvedConfig, UserConfig, normalizePath } from 'vite'
+import { Alias, AliasOptions, ResolvedConfig, UserConfig, normalizePath } from 'vite'
 import { InputOption } from 'rollup'
 
-import { parse, modify, applyEdits } from 'jsonc-parser'
+import { parse, modify, applyEdits, ParseError } from 'jsonc-parser'
 
 import type {
     AppConfig,
@@ -181,58 +181,148 @@ export async function addStaticToInputs(
     }
 }
 
-const getJsOrTsConfigPath = (
+const getJsOrTsConfigPaths = (
     config: InternalConfig,
-): { root: string; cfgPath: string } | undefined => {
+    viteRoot: string,
+): { root: string; cfgPath: string }[] => {
     const cwd = process.cwd()
-    const withRoot = config.root ? path.join(cwd, config.root) : undefined
+    const djangoRoot = config.root ? path.resolve(cwd, config.root) : undefined
 
-    // Try configs in order: tsconfig.app.json, tsconfig.json, jsconfig.json
     const configFiles = ['tsconfig.app.json', 'tsconfig.json', 'jsconfig.json']
 
-    for (const fileName of configFiles) {
-        if (withRoot) {
-            const cfgPath = path.join(withRoot, fileName)
+    const found: { root: string; cfgPath: string }[] = []
+    const seen = new Set<string>()
+
+    for (const root of [viteRoot, cwd, djangoRoot]) {
+        if (!root || seen.has(root)) {
+            continue
+        }
+        seen.add(root)
+        for (const fileName of configFiles) {
+            const cfgPath = path.join(root, fileName)
             if (fs.existsSync(cfgPath)) {
-                return { root: withRoot, cfgPath }
+                found.push({ root, cfgPath })
+                break
             }
         }
-
-        const cfgPath = path.join(cwd, fileName)
-        if (fs.existsSync(cfgPath)) {
-            return { root: cwd, cfgPath }
-        }
     }
 
-    return undefined
+    return found
 }
 
-export async function writeAliases(
+function findMatches(find: Alias['find'], name: string): boolean {
+    if (typeof find === 'string') {
+        return find === name
+    }
+    const stateless = new RegExp(find.source, find.flags.replace(/[gy]/g, ''))
+    return stateless.test(name) || stateless.test(`${name}/`)
+}
+
+export function aliasesTheUserDidNotClaim(
+    aliases: Record<string, string>,
+    userAliases?: AliasOptions,
+): Record<string, string> {
+    if (!userAliases) {
+        return aliases
+    }
+    const claims = Array.isArray(userAliases)
+        ? (name: string) =>
+              userAliases.some((entry: Alias) => findMatches(entry.find, name))
+        : (name: string) => Object.hasOwn(userAliases, name)
+
+    return Object.fromEntries(
+        Object.entries(aliases).filter(([name]) => !claims(name)),
+    )
+}
+
+function userAliasNames(alias?: AliasOptions): Set<string> {
+    if (!alias) {
+        return new Set()
+    }
+    if (Array.isArray(alias)) {
+        return new Set(
+            alias
+                .map((entry: Alias) => entry.find)
+                .filter((find): find is string => typeof find === 'string'),
+        )
+    }
+    return new Set(Object.keys(alias))
+}
+
+export function writeAliases(
     config: InternalConfig,
     aliases: Record<string, string>,
+    viteRoot: string,
+    createIfMissing = false,
+    userAliases?: AliasOptions,
 ) {
-    const cfgOpts = getJsOrTsConfigPath(config)
-    if (!cfgOpts) {
-        return
+    let targets = getJsOrTsConfigPaths(config, viteRoot)
+    if (targets.length === 0) {
+        if (!createIfMissing) {
+            return
+        }
+        targets = [createJsConfig(config)]
     }
 
-    const { root, cfgPath } = cfgOpts
+    for (const { root, cfgPath } of targets) {
+        writeAliasesTo(cfgPath, root, aliases, viteRoot, userAliases)
+    }
+}
 
+function writeAliasesTo(
+    cfgPath: string,
+    root: string,
+    aliases: Record<string, string>,
+    viteRoot: string,
+    userAliases?: AliasOptions,
+) {
     const fileContent = fs.readFileSync(cfgPath, 'utf8')
 
-    const jsonNode = parse(fileContent, [], { disallowComments: false })
+    const errors: ParseError[] = []
+    const jsonNode = parse(fileContent, errors, {
+        disallowComments: false,
+        allowTrailingComma: true,
+    })
+    if (
+        errors.length > 0 ||
+        typeof jsonNode !== 'object' ||
+        jsonNode === null ||
+        Array.isArray(jsonNode)
+    ) {
+        console.warn(
+            `django-vite-plugin: ${cfgPath} is not valid JSON, ` +
+                'so the app aliases were not written into it',
+        )
+        return
+    }
     const old = jsonNode.compilerOptions?.paths || {}
+    const userDefined = userAliasNames(userAliases)
+
+    const isOurs = (alias: string): boolean => {
+        const name = alias.endsWith('/*') ? alias.slice(0, -2) : alias
+        if (userDefined.has(name)) {
+            return false
+        }
+        return (
+            name.startsWith('@s:') ||
+            name.startsWith('@t:') ||
+            Object.hasOwn(aliases, name)
+        )
+    }
 
     const updatedPaths: Record<string, string[]> = {}
 
     for (const alias in old) {
-        if (!alias.startsWith('@s:') && !alias.startsWith('@t:')) {
+        if (!isOurs(alias)) {
             updatedPaths[alias] = old[alias]
         }
     }
 
     for (let alias in aliases) {
-        let val = normalizePath(path.relative(root, aliases[alias]))
+        if (userDefined.has(alias)) {
+            continue
+        }
+        let val = normalizePath(path.relative(root, aliases[alias] || viteRoot))
         if (val !== '.') {
             val = './' + val
         }
@@ -255,32 +345,26 @@ export async function writeAliases(
     )
 
     const newContent = applyEdits(fileContent, edits)
+    if (newContent === fileContent) {
+        return
+    }
 
     fs.writeFileSync(cfgPath, newContent, 'utf-8')
 }
 
-export function createJsConfig(config: InternalConfig) {
-    let root = process.cwd()
-    let jsconfigPath = path.join(root, 'jsconfig.json')
+function createJsConfig(config: InternalConfig): {
+    root: string
+    cfgPath: string
+} {
+    const root = path.resolve(process.cwd(), config.root || '')
+    const cfgPath = path.join(root, 'jsconfig.json')
 
-    if (fs.existsSync(jsconfigPath)) {
-        return
-    }
+    fs.writeFileSync(
+        cfgPath,
+        JSON.stringify({ exclude: ['node_modules'] }, null, 2),
+    )
 
-    const DEFAULT = {
-        exclude: ['node_modules'],
-    }
-
-    if (!config.root) {
-        fs.writeFileSync(jsconfigPath, JSON.stringify(DEFAULT, null, 2))
-        return
-    }
-    root = path.join(process.cwd(), config.root)
-    jsconfigPath = path.join(root, 'jsconfig.json')
-    if (fs.existsSync(jsconfigPath)) {
-        return
-    }
-    fs.writeFileSync(jsconfigPath, JSON.stringify(DEFAULT, null, 2))
+    return { root, cfgPath }
 }
 
 export function getAppAliases(appConfig: AppConfig): Record<string, string> {

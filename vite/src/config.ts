@@ -1,7 +1,7 @@
 import fs from 'fs'
 import { BuildOptions } from 'vite'
 import { glob } from 'glob'
-import { addStaticToInputs, createJsConfig } from './helpers.js'
+import { addStaticToInputs } from './helpers.js'
 import { InputOption } from 'rollup'
 
 export interface AppConfig {
@@ -90,12 +90,6 @@ export async function resolvePluginConfig(
 
     //@ts-expect-error no way to convert decleared types
     config.appConfig = appConfig
-
-    if (config.addAliases === true) {
-        createJsConfig(config as InternalConfig)
-    }
-
-    config.addAliases = config.addAliases !== false
 
     return config as InternalConfig
 }

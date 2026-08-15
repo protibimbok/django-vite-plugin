@@ -10,6 +10,7 @@ import {
     getAppAliases,
     resolveDevServerUrl,
     BASE_DIR,
+    aliasesTheUserDidNotClaim,
 } from './helpers.js'
 import {
     AppConfig,
@@ -54,10 +55,6 @@ function djangoPlugin(config: InternalConfig): Plugin {
         config.appConfig,
     )
 
-    if (config.addAliases) {
-        writeAliases(config, defaultAliases)
-    }
-
     let viteDevServerUrl: DevServerUrl
     let userConfigG: UserConfig
     let resolvedConfig: ResolvedConfig
@@ -68,11 +65,27 @@ function djangoPlugin(config: InternalConfig): Plugin {
         config: (userConfig: UserConfig, { command }) => {
             const build = resolveBuildConfig(config, userConfig.build)
             userConfigG = userConfig
+            const ours = aliasesTheUserDidNotClaim(
+                defaultAliases,
+                userConfig.resolve?.alias,
+            )
+
+            const root = userConfig.root || config.root || '.'
+
+            if (config.addAliases !== false) {
+                writeAliases(
+                    config,
+                    defaultAliases,
+                    path.resolve(process.cwd(), root),
+                    config.addAliases === true,
+                    userConfig.resolve?.alias,
+                )
+            }
 
             return {
                 base:
                     command == 'build' ? config.appConfig.BUILD_URL_PREFIX : '',
-                root: userConfig.root || config.root || '.',
+                root,
                 build,
                 server: {
                     origin:
@@ -81,15 +94,12 @@ function djangoPlugin(config: InternalConfig): Plugin {
                 },
                 resolve: {
                     alias: Array.isArray(userConfig.resolve?.alias)
-                        ? [
-                              ...(userConfig.resolve?.alias ?? []),
-                              ...Object.keys(defaultAliases).map((alias) => ({
-                                  find: alias,
-                                  replacement: defaultAliases[alias],
-                              })),
-                          ]
+                        ? Object.entries(ours).map(([find, replacement]) => ({
+                              find,
+                              replacement,
+                          }))
                         : {
-                              ...defaultAliases,
+                              ...ours,
                               ...userConfig.resolve?.alias,
                           },
                 },
