@@ -12,6 +12,7 @@ import {
     BASE_DIR,
 } from './helpers.js'
 import {
+    AppConfig,
     DevServerUrl,
     InternalConfig,
     PluginConfig,
@@ -28,7 +29,10 @@ export async function djangoVitePlugin(
         config = { input: config }
     }
     process.stdout.write('Loading configurations...\r')
-    const appConfig = await execPythonJSON(['--action', 'config'], config)
+    const appConfig = await execPythonJSON<AppConfig>(
+        ['--action', 'config'],
+        config,
+    )
 
     if (DJANGO_VERSION === '...') {
         DJANGO_VERSION = appConfig.DJANGO_VERSION

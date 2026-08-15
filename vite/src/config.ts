@@ -18,6 +18,7 @@ export interface AppConfig {
     STATIC_LOOKUP: boolean
     INSTALLED_APPS: Record<string, string>
     HOT_FILE: string
+    DJANGO_VERSION: string
 }
 
 export interface PluginConfig {

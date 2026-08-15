@@ -18,45 +18,120 @@ import { BASE_DIR } from './basedir.js'
 
 export { BASE_DIR }
 
+function pythonCommand(
+    args: string[],
+    config: PluginConfig,
+): [string, string[]] {
+    return [
+        config.pyPath || 'python',
+        [
+            path.join(config.root || '', 'manage.py'),
+            'django_vite_plugin',
+            ...(args || []),
+            ...(config.pyArgs || []),
+        ],
+    ]
+}
+
 export function execPythonNoErr(
     args: string[],
     config: PluginConfig,
-): Promise<[string, string]> {
+): Promise<[string, string, number | null]> {
     return new Promise((resolve) => {
-        args = [...(args || []), ...(config.pyArgs || [])]
-        const py = spawn(config.pyPath || 'python', [
-            path.join(config.root || '', 'manage.py'),
-            'django_vite_plugin',
-            ...args,
-        ])
+        const [pyPath, pyArgs] = pythonCommand(args, config)
+        const py = spawn(pyPath, pyArgs)
+
+        py.stdout.setEncoding('utf8')
+        py.stderr.setEncoding('utf8')
 
         let err = '',
             res = ''
         py.stderr.on('data', (data) => {
-            err += data.toString()
+            err += data
         })
         py.stdout.on('data', (data) => {
-            res += data.toString()
+            res += data
         })
-        py.on('close', () => {
-            resolve([res, err])
+
+        py.on('error', (error: NodeJS.ErrnoException) => {
+            err +=
+                error.code === 'ENOENT'
+                    ? `django-vite-plugin: could not run '${pyPath}'; no such executable.\n` +
+                      "Set 'pyPath' to the Python of this project, e.g. " +
+                      "djangoVitePlugin({ input: [...], pyPath: 'python3' })\n"
+                    : `django-vite-plugin: could not run '${pyPath}': ${error.message}\n`
+            resolve([res, err, null])
+        })
+        py.on('close', (code) => {
+            resolve([res, err, code])
         })
     })
 }
 
-export async function execPythonJSON(
+const MAX_REPORTED_OUTPUT = 500
+
+function pythonError(
     args: string[],
     config: PluginConfig,
-): Promise<any> {
-    const [res, err] = await execPythonNoErr(args, config)
+    stdout: string,
+    stderr: string,
+    code: number | null,
+    cause?: unknown,
+): Error {
+    const [pyPath, pyArgs] = pythonCommand(args, config)
+    const unparseable = Boolean(cause) && Boolean(stdout.trim())
+    const lines = [
+        unparseable
+            ? 'django-vite-plugin: the django_vite_plugin command did not print JSON'
+            : 'django-vite-plugin: the django_vite_plugin command failed',
+        `  ran: ${[pyPath, ...pyArgs].join(' ')}`,
+    ]
+    if (code) {
+        lines.push(`  exit code: ${code}`)
+    }
+    if (stderr.trim()) {
+        lines.push(`  stderr: ${block(stderr)}`)
+    }
+    if (stdout.trim()) {
+        lines.push(`  stdout: ${block(stdout)}`)
+    }
+    if (unparseable) {
+        lines.push(
+            "  A print() anywhere Django imports - settings.py, an app's " +
+                'ready() - lands in this output. Write to sys.stderr instead.',
+        )
+    }
+    return Object.assign(new Error(lines.join('\n'), { cause }), {
+        stdout,
+        stderr,
+        code,
+    })
+}
+
+function block(text: string): string {
+    text = text.trim()
+    if (text.length > MAX_REPORTED_OUTPUT) {
+        text = `${text.slice(0, MAX_REPORTED_OUTPUT)}... (${text.length} characters in total)`
+    }
+    return text.split('\n').join('\n    ')
+}
+
+export async function execPythonJSON<T>(
+    args: string[],
+    config: PluginConfig,
+): Promise<T> {
+    const [res, err, code] = await execPythonNoErr(args, config)
     try {
-        return JSON.parse(res)
-    } catch (error) {
-        if (err) {
-            throw new Error(err)
-        } else {
-            throw error
+        const parsed = JSON.parse(res)
+        if (code !== 0) {
+            throw pythonError(args, config, res, err, code)
         }
+        return parsed
+    } catch (error) {
+        if (error instanceof SyntaxError) {
+            throw pythonError(args, config, res, err, code, error)
+        }
+        throw error
     }
 }
 
@@ -88,7 +163,7 @@ export async function addStaticToInputs(
         inputs = input
     }
 
-    const res = await execPythonJSON(
+    const res = await execPythonJSON<string[]>(
         ['--find-static', ...inputs.map((f) => normalizePath(f))],
         config,
     )
