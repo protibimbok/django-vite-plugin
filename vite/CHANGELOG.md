@@ -1,3 +1,4 @@
-## v0.1.0 (2023-03-24)
+# Changelog
 
-Initial pre-release.
+The Vite plugin and the Django app are released together and share one
+changelog: [../CHANGELOG.md](../CHANGELOG.md).

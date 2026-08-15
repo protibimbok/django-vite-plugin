@@ -113,6 +113,10 @@ import utils from '@s:myapp/js/utils.js'
 import App from '@t:myapp/App.jsx'
 ```
 
+Aliases are named after the app's *label*, so a nested app such as `apps.blog`
+is `@s:blog`. Only apps inside `BASE_DIR` get one — installed third-party apps
+are not aliased.
+
 ### Auto Reload
 
 The browser automatically reloads when `.html` or `.py` files change. No configuration required.
@@ -144,10 +148,20 @@ DJANGO_VITE_PLUGIN = {
     # Use Vite dev server (default: DEBUG)
     'DEV_MODE': True,
 
-    # Build output directory (default: STATIC_ROOT or 'static')
+    # Build output directory (default: STATIC_ROOT or 'static').
+    # A relative path is resolved against BASE_DIR, never the working
+    # directory, and Vite is given the resolved path.
     'BUILD_DIR': 'static',
 
-    # URL prefix for built assets (default: STATIC_URL)
+    # Where Vite writes its manifest (default: BUILD_DIR/.vite/manifest.json).
+    # A relative path is resolved against BASE_DIR. Only needed if
+    # 'build.manifest' in vite.config.js names a file of its own; the plugin
+    # warns during a build when the two part company.
+    'MANIFEST': 'static/.vite/manifest.json',
+
+    # URL prefix for built assets (default: STATIC_URL).
+    # Set this or STATIC_URL. Required to build; dev mode never serves a
+    # built asset and does not ask for one.
     'BUILD_URL_PREFIX': '/static/',
 
     # Enable static file path resolution (default: True)
@@ -179,7 +193,8 @@ djangoVitePlugin({
     // Entry points (required)
     input: ['myapp/js/main.js'],
 
-    // Project root relative to vite.config.js
+    // Django project root (where manage.py is), relative to the directory
+    // vite runs from - usually the one holding vite.config.js
     root: '..',
 
     // Write aliases to jsconfig.json/tsconfig.json (default: true if file exists)
@@ -233,6 +248,27 @@ Output:
 <script src="..." type="module" crossorigin="anonymous" data-turbo-track="reload"></script>
 ```
 
+`True` writes an attribute on its own, and `False` (or `None`) leaves it
+out — which is also how you drop one of the `JS_ATTRS`/`CSS_ATTRS`
+defaults, in a tag or in the settings:
+
+```django
+{% vite 'myapp/js/main.js' defer=True type=False %}
+```
+```html
+<script defer src="..."></script>
+```
+
+HTML has no falsy attribute *value* — `defer="false"` still defers — so
+leaving the attribute out is the only way to say no. Quote it if you
+want the word itself: `data-x='false'`.
+
+The attributes apply to the assets named in the tag. In a production
+build, a JS entry may pull in additional `<link>` tags for the
+stylesheets it imports — those always use the `CSS_ATTRS` defaults, not
+the tag's attributes. To customize a stylesheet's attributes, name the
+stylesheet in a `{% vite %}` tag itself.
+
 ### Dynamic Paths
 
 ```django
@@ -247,6 +283,19 @@ Output:
 2. Run `python manage.py collectstatic`
 3. Set `DEBUG = False` (or explicitly set `DEV_MODE: False`)
 
+`BUILD_DIR` is a directory Django owns — it defaults to `STATIC_ROOT`, and it
+holds hand-written assets and whatever `collectstatic` put there. So the plugin
+leaves it alone rather than emptying it before a build, which is what Vite does
+by default with an output directory inside its root. Old hashed files therefore
+accumulate; if the directory is Vite's alone, ask for the sweep explicitly:
+
+```javascript
+export default defineConfig({
+    build: { emptyOutDir: true },
+    plugins: [djangoVitePlugin({ input: [...] })],
+})
+```
+
 ### CDN / External Static Server
 
 ```python
@@ -257,6 +306,10 @@ DJANGO_VITE_PLUGIN = {
 ```
 
 The manifest file must remain accessible locally at `BUILD_DIR/.vite/manifest.json`.
+
+`BUILD_URL_PREFIX` is where Vite's `base` comes from — the plugin sets it, and a
+`base` of your own in `vite.config.js` is overridden and warned about. Django
+renders asset URLs from that same prefix, so the two cannot disagree.
 
 ### Testing Production Builds Locally
 
@@ -272,6 +325,8 @@ The manifest file must remain accessible locally at `BUILD_DIR/.vite/manifest.js
 2. Configure settings:
 
     ```python
+    DEBUG = True
+
     STATICFILES_DIRS = [BASE_DIR / 'build']
 
     DJANGO_VITE_PLUGIN = {
@@ -279,6 +334,19 @@ The manifest file must remain accessible locally at `BUILD_DIR/.vite/manifest.js
         'BUILD_DIR': 'build',
     }
     ```
+
+    `DEBUG` must stay `True`. Django never serves static files with
+    `DEBUG = False`, so these URL patterns are inactive in that case and the
+    built assets will 404. Only `DEV_MODE` needs to be turned off to load the
+    build instead of the dev server. Keeping `DEBUG` on is also what lets a
+    rebuild be picked up without restarting Django: the check costs a `stat`
+    per render, so it is not made in a deployment.
+
+    Listing `BUILD_DIR` in `STATICFILES_DIRS` matters: `runserver` answers
+    every URL under `STATIC_URL` itself and 404s anything the static finders
+    do not know, before these patterns get a chance. If the build lives
+    somewhere the finders do not look - `STATIC_ROOT`, typically - start the
+    server with `runserver --nostatic` instead.
 
 3. Run `npm run build` and start Django.
 
@@ -323,11 +391,47 @@ djangoVitePlugin({
 })
 ```
 
+`root` says where `manage.py` is, and nothing else. With `STATIC_LOOKUP` on,
+Vite builds and serves from `BASE_DIR` — the directory the asset names are
+relative to — whatever directory you run Vite from, so the entry paths above are
+the usual app-relative ones. A `root` in your Vite config is refused, with a
+warning, for the same reason: the names have one directory they resolve against.
+
+To keep Vite's root where the frontend lives, turn the lookup off and name
+entries the way Vite sees them:
+
+```javascript
+// frontend/vite.config.js — Vite's root stays in frontend/
+export default defineConfig({
+    root: './',
+    plugins: [djangoVitePlugin({ input: ['src/main.ts'], root: '..' })],
+})
+```
+
+```python
+DJANGO_VITE_PLUGIN = {
+    'STATIC_LOOKUP': False,
+}
+```
+
+See `example/svelte-in-different-dir` for the whole layout.
+
 ## IDE Support
 
-The plugin automatically updates `jsconfig.json` or `tsconfig.json` with path aliases when you run `npm run dev`. This enables autocomplete for `@s:appname` and `@t:appname` imports.
+Whenever Vite reads its config — `npm run dev` and `npm run build` alike — the
+plugin writes the app aliases into your JavaScript/TypeScript config, so the IDE
+resolves `@s:appname` and `@t:appname` imports the way the bundler does.
 
-To force alias generation even without an existing config file:
+It looks in three directories: Vite's root, the directory Vite runs from, and the
+Django root. Usually those are one and the same, but a frontend in a subdirectory
+has a config file at each end and both of them need the aliases. In each
+directory the first of `tsconfig.app.json`, `tsconfig.json` and `jsconfig.json`
+that exists is the one written to. Comments, trailing commas and paths of your
+own are kept, an alias you define yourself in `resolve.alias` is left to your
+definition, and a file that does not parse is reported rather than overwritten.
+
+To also have a `jsconfig.json` created when the project has none of them — it
+lands at the Django root:
 
 ```javascript
 djangoVitePlugin({
@@ -336,6 +440,8 @@ djangoVitePlugin({
 })
 ```
 
+`addAliases: false` writes nothing at all.
+
 ## Troubleshooting
 
 ### Assets not loading in development
@@ -343,6 +449,55 @@ djangoVitePlugin({
 - Ensure both Django and Vite dev servers are running
 - Check that `DEV_MODE` is `True` (or `DEBUG = True`)
 - Verify the Vite server is accessible at `http://localhost:5173`
+- Assets from a `STATICFILES_DIRS` entry outside `BASE_DIR` are loaded through
+  Vite's `/@fs/` route, since Vite only serves what is under its root. If Vite
+  answers those with *"is outside of Vite serving allow list"*, add the
+  directory to [`server.fs.allow`](https://vite.dev/config/server-options#server-fs-allow)
+
+### Assets not loading on a phone or another machine
+
+Pointing browsers at a reachable address is only the first of three gates:
+
+```javascript
+export default defineConfig({
+    server: {
+        host: true,
+        // Where other devices reach this machine
+        hmr: { host: '192.168.1.5' },
+        // Where Django serves the page; since Vite 6.0.9 anything but
+        // localhost is refused by default, and the browser blocks the assets
+        cors: { origin: 'http://192.168.1.5:8000' },
+        // Only needed when the address above is a name rather than an IP
+        allowedHosts: ['dev.example.test'],
+    },
+    plugins: [djangoVitePlugin({ input: [...] })],
+})
+```
+
+A missing `cors` shows up as a CORS error in the browser console while Vite
+logs nothing; a missing `allowedHosts` shows up as Vite's own *"Blocked
+request. This host is not allowed."*
+
+### Naming the dev server URL outright
+
+`server.hmr.host` above changes one part of an address the plugin otherwise
+works out from the socket Vite bound. To state the whole thing — behind a
+reverse proxy, a tunnel, or an HTTPS terminator — set
+[`server.origin`](https://vite.dev/config/server-options#server-origin):
+
+```javascript
+export default defineConfig({
+    server: {
+        origin: 'https://assets.example.test',
+    },
+    plugins: [djangoVitePlugin({ input: [...] })],
+})
+```
+
+It wins over `server.hmr.host` and the bound address, and is what Django
+renders in `<script src>` and `<link href>`, so the assets Vite rewrites and
+the tags Django writes agree on one origin. It has to be an `http` or `https`
+URL; anything else is reported and ignored.
 
 ### Build assets not found in production
 
@@ -352,9 +507,9 @@ djangoVitePlugin({
 
 ### Import aliases not working
 
-- Run `npm run dev` to generate/update `jsconfig.json`
+- Run `npm run dev` or `npm run build` to update `jsconfig.json`/`tsconfig.json`
+- If the project has no such file, set `addAliases: true` to have one created
 - Restart your IDE after alias generation
-- For TypeScript, aliases are added to `tsconfig.json` automatically
 
 ## License
 
