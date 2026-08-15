@@ -8,7 +8,8 @@ export interface AppConfig {
     WS_CLIENT: string
     DEV_MODE: boolean
     BUILD_DIR: string
-    BUILD_URL_PREFIX: string
+    MANIFEST: string
+    BUILD_URL_PREFIX: string | null
     JS_ATTRS: {
         [key: string]: string
     }
@@ -98,14 +99,18 @@ export function resolveBuildConfig(
     config: InternalConfig,
     front?: BuildOptions,
 ): BuildOptions {
-    return {
+    const build: BuildOptions = {
         manifest: front?.manifest ?? true,
         outDir: front?.outDir ?? config.appConfig.BUILD_DIR,
         assetsInlineLimit: front?.assetsInlineLimit ?? 0,
-        rollupOptions: {
-            input: config.input,
-        },
+        emptyOutDir: front?.emptyOutDir ?? false,
     }
+
+    if (front?.rollupOptions?.input === undefined) {
+        build.rollupOptions = { input: config.input }
+    }
+
+    return build
 }
 
 async function resolveFullReloadConfig(

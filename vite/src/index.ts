@@ -89,6 +89,44 @@ function releaseHotFile(hotFile: string, url: string): void {
     }
 }
 
+function warnAboutTheManifest(
+    resolved: ResolvedConfig,
+    appConfig: AppConfig,
+): void {
+    const readFrom = path.resolve(appConfig.MANIFEST)
+
+    if (resolved.build.manifest === false) {
+        resolved.logger.warn(
+            colors.yellow(
+                "django-vite-plugin: 'build.manifest' is false, so vite writes " +
+                    'no manifest, and Django resolves every asset it renders ' +
+                    `through one - it expects to read '${readFrom}'.`,
+            ),
+        )
+        return
+    }
+
+    const writtenTo = path.resolve(
+        resolved.root,
+        resolved.build.outDir,
+        typeof resolved.build.manifest === 'string'
+            ? resolved.build.manifest
+            : '.vite/manifest.json',
+    )
+
+    if (writtenTo !== readFrom) {
+        resolved.logger.warn(
+            colors.yellow(
+                `django-vite-plugin: vite writes its manifest to '${writtenTo}', ` +
+                    `but Django reads it from '${readFrom}' and will report the ` +
+                    "build as missing. Drop 'build.outDir' and 'build.manifest' " +
+                    'from your vite config, or set BUILD_DIR and MANIFEST in ' +
+                    'DJANGO_VITE_PLUGIN to the file vite writes.',
+            ),
+        )
+    }
+}
+
 function djangoPlugin(config: InternalConfig): Plugin[] {
     const defaultAliases: Record<string, string> = getAppAliases(
         config.appConfig,
@@ -96,6 +134,7 @@ function djangoPlugin(config: InternalConfig): Plugin[] {
 
     let userConfigG: UserConfig
     let resolvedConfig: ResolvedConfig
+    let userNamedTheEntries = false
 
     let setDevServerUrl!: (url: DevServerUrl | undefined) => void
     const devServerUrl = new Promise<DevServerUrl | undefined>((resolve) => {
@@ -107,8 +146,25 @@ function djangoPlugin(config: InternalConfig): Plugin[] {
         name: 'django-vite-plugin',
         enforce: 'pre',
         config: (userConfig: UserConfig, { command }) => {
+            let base = ''
+            if (command === 'build') {
+                const prefix = config.appConfig.BUILD_URL_PREFIX
+                if (!prefix) {
+                    throw new Error(
+                        'django-vite-plugin: a build has to be emitted for the ' +
+                            'URL it will be served under, and Django reports ' +
+                            'neither STATIC_URL nor BUILD_URL_PREFIX in ' +
+                            'DJANGO_VITE_PLUGIN is set. Set one of them, e.g. ' +
+                            "STATIC_URL = 'static/'.",
+                    )
+                }
+                base = prefix
+            }
+
             const build = resolveBuildConfig(config, userConfig.build)
             userConfigG = userConfig
+            userNamedTheEntries =
+                userConfig.build?.rollupOptions?.input !== undefined
             const ours = aliasesTheUserDidNotClaim(
                 defaultAliases,
                 userConfig.resolve?.alias,
@@ -127,8 +183,7 @@ function djangoPlugin(config: InternalConfig): Plugin[] {
             }
 
             return {
-                base:
-                    command == 'build' ? config.appConfig.BUILD_URL_PREFIX : '',
+                base,
                 root,
                 build,
                 server: {
@@ -145,6 +200,23 @@ function djangoPlugin(config: InternalConfig): Plugin[] {
                               ...userConfig.resolve?.alias,
                           },
                 },
+            }
+        },
+        configResolved(resolved) {
+            if (resolved.command === 'build') {
+                if (userNamedTheEntries) {
+                    resolved.logger.warn(
+                        colors.yellow(
+                            "django-vite-plugin: 'build.rollupOptions.input' " +
+                                'is set in your vite config, so it is built as ' +
+                                "written and the plugin's own 'input' is " +
+                                'ignored - along with the Django static lookup ' +
+                                'that resolves it. Name the entries in one ' +
+                                'place or the other.',
+                        ),
+                    )
+                }
+                warnAboutTheManifest(resolved, config.appConfig)
             }
         },
         configureServer(server) {

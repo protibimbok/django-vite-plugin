@@ -156,12 +156,12 @@ export async function addStaticToInputs(
     input: InputOption,
     config: PluginConfig,
 ): Promise<string[] | Record<string, string>> {
-    let inputs: string[] = []
+    let inputs: string[]
     let isObj = false
     if (typeof input === 'string') {
         inputs = [input]
     } else if (!Array.isArray(input)) {
-        inputs = Object.keys(input)
+        inputs = Object.values(input)
         isObj = true
     } else {
         inputs = input
@@ -175,7 +175,7 @@ export async function addStaticToInputs(
     if (isObj) {
         const resObj: Record<string, string> = {}
         let i = 0
-        for (let key in input as Record<string, string>) {
+        for (const key in input as Record<string, string>) {
             resObj[key] = res[i]
             i++
         }
