@@ -11,7 +11,8 @@
     "homepage": "https://github.com/protibimbok/django-vite-plugin#readme",
     "repository": {
         "type": "git",
-        "url": "https://github.com/protibimbok/django-vite-plugin"
+        "url": "https://github.com/protibimbok/django-vite-plugin",
+        "directory": "vite"
     },
     "license": "MIT",
     "author": {
@@ -42,17 +43,12 @@
         "@typescript-eslint/parser": "^8.43.0",
         "prettier": "^3.6.2",
         "rollup": "^4.50.1",
-        "tsc": "^2.0.4",
         "typescript": "^5.9.2",
         "vite": "^7.1.5"
-    },
-    "engines": {
-        "node": ">=14"
     },
     "dependencies": {
         "glob": "^11.0.3",
         "jsonc-parser": "^3.3.1",
         "picocolors": "^1.1.1"
-    },
-    "packageManager": "pnpm@10.15.1"
+    }
 }
