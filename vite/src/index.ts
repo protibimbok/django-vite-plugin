@@ -49,7 +49,45 @@ export async function djangoVitePlugin(
     ]
 }
 
+const hotFiles = new Map<string, string>()
+
 let exitHandlersBound = false
+
+function claimHotFile(
+    hotFile: string,
+    url: DevServerUrl,
+    logger: ResolvedConfig['logger'],
+): boolean {
+    try {
+        fs.mkdirSync(path.dirname(hotFile), { recursive: true })
+        fs.writeFileSync(hotFile, url)
+    } catch (error) {
+        logger.error(
+            colors.red(
+                `django-vite-plugin: could not write the hot file at '${hotFile}': ` +
+                    `${(error as Error).message}. Django reads it to find this ` +
+                    'server, and reports it as not started until it can. Set ' +
+                    "HOT_FILE in DJANGO_VITE_PLUGIN to a path it can write.",
+            ),
+        )
+        return false
+    }
+    hotFiles.set(hotFile, url)
+    return true
+}
+
+function releaseHotFile(hotFile: string, url: string): void {
+    if (hotFiles.get(hotFile) === url) {
+        hotFiles.delete(hotFile)
+    }
+    try {
+        if (fs.readFileSync(hotFile, 'utf-8') === url) {
+            fs.rmSync(hotFile)
+        }
+    } catch {
+        return
+    }
+}
 
 function djangoPlugin(config: InternalConfig): Plugin {
     const defaultAliases: Record<string, string> = getAppAliases(
@@ -124,13 +162,15 @@ function djangoPlugin(config: InternalConfig): Plugin {
                     x: string | AddressInfo | null | undefined,
                 ): x is AddressInfo => typeof x === 'object'
                 if (isAddressInfo(address)) {
-                    viteDevServerUrl = resolveDevServerUrl(
+                    const boundUrl = resolveDevServerUrl(
                         address,
                         server.config,
                     )
-                    fs.writeFileSync(
+                    viteDevServerUrl = boundUrl
+                    claimHotFile(
                         config.appConfig.HOT_FILE,
-                        viteDevServerUrl,
+                        boundUrl,
+                        server.config.logger,
                     )
                     setTimeout(() => {
                         server.config.logger.info(
@@ -143,10 +183,14 @@ function djangoPlugin(config: InternalConfig): Plugin {
                         server.config.logger.info('')
                     }, 100)
 
+                    server.httpServer?.once('close', () => {
+                        releaseHotFile(config.appConfig.HOT_FILE, boundUrl)
+                    })
+
                     if (!exitHandlersBound) {
                         const clean = () => {
-                            if (fs.existsSync(config.appConfig.HOT_FILE)) {
-                                fs.rmSync(config.appConfig.HOT_FILE)
+                            for (const [hotFile, url] of [...hotFiles]) {
+                                releaseHotFile(hotFile, url)
                             }
                         }
 
