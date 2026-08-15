@@ -5,12 +5,17 @@ on:
     types: [created]
 
 jobs:
+  # Nothing reaches PyPI that has not been tested first.
+  tests:
+    uses: ./.github/workflows/tests.yml
+
   build-n-publish:
+    needs: tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.x"
       - name: Install pip
@@ -21,13 +26,17 @@ jobs:
         working-directory: django
         run: python3 -m build
         
+      # A rehearsal, so a version already up there is nothing to stop for -
+      # unlike PyPI below, where the same version twice is a real mistake.
       - name: Publish distribution 📦 to Test PyPI
         env:
           TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
         working-directory: django
-        run: twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+        run: >-
+          twine upload --skip-existing
+          --repository-url https://test.pypi.org/legacy/ dist/*
 
       - name: Publish distribution 📦 to PyPI
         env:
