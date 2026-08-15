@@ -132,7 +132,6 @@ function djangoPlugin(config: InternalConfig): Plugin[] {
         config.appConfig,
     )
 
-    let userConfigG: UserConfig
     let resolvedConfig: ResolvedConfig
     let userBase: string | undefined
     let userRoot: string | undefined
@@ -164,7 +163,6 @@ function djangoPlugin(config: InternalConfig): Plugin[] {
             }
 
             const build = resolveBuildConfig(config, userConfig.build)
-            userConfigG = userConfig
             userBase = userConfig.base
             userRoot = userConfig.root
             userNamedTheEntries =

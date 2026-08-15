@@ -62,9 +62,12 @@ jobs:
           python-version: "3.13"
 
       # The workspace also contains the example projects; only the plugin's
-      # dependencies are needed to test it.
+      # dependencies are needed to lint and test it.
       - name: Install
         run: pnpm install --filter django-vite-plugin
+
+      - name: Lint
+        run: pnpm lint
 
       - name: Test
         run: pnpm test
