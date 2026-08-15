@@ -35,6 +35,7 @@
     ],
     "scripts": {
         "build": "node --experimental-strip-types ./script/build.ts",
+        "test": "pnpm build && node --test \"tests/**/*.test.mjs\"",
         "lint": "eslint --ext .ts ./src"
     },
     "devDependencies": {
