@@ -2,7 +2,7 @@ from typing import Any
 from django.core.management.base import BaseCommand, CommandParser
 import json
 from ...config_helper import get_config
-from .utils import format_config_for_output, find_static_assets
+from ._utils import format_config_for_output, find_static_assets
 
 class Command(BaseCommand):
     """Management command for django-vite-plugin operations."""
