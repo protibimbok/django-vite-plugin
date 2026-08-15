@@ -29,6 +29,20 @@ const PLUGIN_URL = pathToFileURL(path.join(DIST, 'esm', 'index.js')).href
 
 const ASSET = '/apps/blog/static/blog/img.png?import'
 
+function baseUrl(server) {
+    const { address, family, port } = server.httpServer.address()
+    const ipv6 = family === 'IPv6' || family === 6
+    const host =
+        address === '0.0.0.0'
+            ? '127.0.0.1'
+            : address === '::'
+              ? '[::1]'
+              : ipv6
+                ? `[${address}]`
+                : address
+    return `http://${host}:${port}`
+}
+
 async function startServer(t, plugins, config = {}) {
     const server = await createServer({
         configFile: false,
@@ -96,7 +110,7 @@ test('CSS url() is rewritten to the dev server origin', async (t) => {
         await loadPlugins({ input: 'blog/main.js' }),
     )
     await server.listen()
-    const base = `http://127.0.0.1:${server.config.server.port}`
+    const base = baseUrl(server)
     const devServerUrl = project.read('hot')
 
     // As a `<link>` tag loads it, and as a JS module import.
@@ -130,7 +144,7 @@ test('a configured origin reaches both the assets and the hot file', async (t) =
         { server: { host: '0.0.0.0', origin } },
     )
     await server.listen()
-    const base = `http://127.0.0.1:${server.config.server.port}`
+    const base = baseUrl(server)
 
     assert.equal(project.read('hot'), origin)
 
@@ -221,7 +235,7 @@ test('the info page answers /index.html and nothing else', async (t) => {
         await loadPlugins({ input: 'blog/main.js' }),
     )
     await server.listen()
-    const base = `http://127.0.0.1:${server.config.server.port}`
+    const base = baseUrl(server)
 
     const info = await fetch(`${base}/index.html`)
     assert.equal(info.status, 404)

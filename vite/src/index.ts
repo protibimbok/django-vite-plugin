@@ -44,7 +44,7 @@ export async function djangoVitePlugin(
 
     config = await resolvePluginConfig(config, appConfig)
     return [
-        djangoPlugin(config as InternalConfig),
+        ...djangoPlugin(config as InternalConfig),
         fullReload(config as InternalConfig),
     ]
 }
@@ -89,16 +89,21 @@ function releaseHotFile(hotFile: string, url: string): void {
     }
 }
 
-function djangoPlugin(config: InternalConfig): Plugin {
+function djangoPlugin(config: InternalConfig): Plugin[] {
     const defaultAliases: Record<string, string> = getAppAliases(
         config.appConfig,
     )
 
-    let viteDevServerUrl: DevServerUrl
     let userConfigG: UserConfig
     let resolvedConfig: ResolvedConfig
 
-    return {
+    let setDevServerUrl!: (url: DevServerUrl | undefined) => void
+    const devServerUrl = new Promise<DevServerUrl | undefined>((resolve) => {
+        setDevServerUrl = resolve
+    })
+    let warnedNoOrigin = false
+
+    const main: Plugin = {
         name: 'django-vite-plugin',
         enforce: 'pre',
         config: (userConfig: UserConfig, { command }) => {
@@ -142,31 +147,24 @@ function djangoPlugin(config: InternalConfig): Plugin {
                 },
             }
         },
-        configResolved(config) {
-            resolvedConfig = config
-        },
-        transform(code) {
-            return code
-                .split(ORIGIN_PLACEHOLDER)
-                .join(
-                    resolvedConfig?.command === 'serve'
-                        ? viteDevServerUrl
-                        : config.appConfig.BUILD_URL_PREFIX,
-                )
-        },
         configureServer(server) {
+            if (!server.httpServer) {
+                setDevServerUrl(undefined)
+            }
             server.httpServer?.once('listening', () => {
                 const address = server.httpServer?.address()
 
                 const isAddressInfo = (
                     x: string | AddressInfo | null | undefined,
                 ): x is AddressInfo => typeof x === 'object'
-                if (isAddressInfo(address)) {
+                if (!isAddressInfo(address)) {
+                    setDevServerUrl(undefined)
+                } else {
                     const boundUrl = resolveDevServerUrl(
                         address,
                         server.config,
                     )
-                    viteDevServerUrl = boundUrl
+                    setDevServerUrl(boundUrl)
                     claimHotFile(
                         config.appConfig.HOT_FILE,
                         boundUrl,
@@ -221,6 +219,42 @@ function djangoPlugin(config: InternalConfig): Plugin {
                 })
         },
     }
+
+    const originResolver: Plugin = {
+        name: 'django-vite-plugin-origin-resolver',
+        enforce: 'post',
+        configResolved(config) {
+            resolvedConfig = config
+        },
+        async transform(code) {
+            if (!code.includes(ORIGIN_PLACEHOLDER)) {
+                return null
+            }
+            let url: string
+            if (resolvedConfig?.command === 'serve') {
+                url = (await devServerUrl) ?? ''
+                if (!url && !warnedNoOrigin) {
+                    warnedNoOrigin = true
+                    resolvedConfig.logger.warn(
+                        colors.yellow(
+                            'django-vite-plugin: could not determine the dev server URL, ' +
+                                'so asset URLs are left relative to the page that loads them. ' +
+                                "Set 'server.origin' in vite.config.js to the URL vite is reachable at.",
+                        ),
+                    )
+                }
+            } else {
+                url = config.appConfig.BUILD_URL_PREFIX ?? ''
+            }
+
+            return {
+                code: code.split(ORIGIN_PLACEHOLDER).join(url),
+                map: null,
+            }
+        },
+    }
+
+    return [main, originResolver]
 }
 
 function fullReload(config: InternalConfig): Plugin {
