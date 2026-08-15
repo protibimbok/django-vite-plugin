@@ -36,6 +36,3 @@ DEFAULT_CONFIG = {
 
 # File extensions
 CSS_EXTENSIONS = {'.css', '.scss', '.sass', '.less'}
-
-# Root directory length for path calculations
-ROOT_DIR_LEN = len(str(BASE_DIR))

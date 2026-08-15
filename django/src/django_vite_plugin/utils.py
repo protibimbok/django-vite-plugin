@@ -1,17 +1,17 @@
+import os
 from typing import Dict
 from django.conf import settings
 from django.contrib.staticfiles import finders
+from django.core.exceptions import SuspiciousFileOperation
 from urllib.parse import urljoin
 from .config_helper import get_config
-from .constants import ROOT_DIR_LEN
+from .constants import BASE_DIR
 from .cache import FOUND_FILES_CACHE, VITE_MANIFEST, DEV_SERVER
 from .manifest import get_manifest_entry, load_manifest
-from .html import get_html
-
-# Length of the root directory
-ROOT_DIR_LEN = len(str(getattr(settings, "BASE_DIR")))
 
 CONFIG = get_config()
+
+RETRY_MISSES = bool(getattr(settings, 'DEBUG', False))
 
 # Set JS attributes for build mode
 if CONFIG['DEV_MODE'] is False and 'JS_ATTRS_BUILD' in CONFIG:
@@ -97,6 +97,13 @@ def get_html(url: str, attrs: Dict[str, str]) -> str:
         return f'<script {attrs["js"]} src="{url}"></script>'
     
 
+def _dev_url(dev_server: str, path: str) -> str:
+    if not (path.startswith('../') or os.path.isabs(path)):
+        return f'{dev_server}/{path}'
+    absolute = os.path.normpath(os.path.join(BASE_DIR, path)).replace('\\', '/')
+    return f'{dev_server}/@fs/{absolute.lstrip("/")}'
+
+
 def get_html_dev(url: str, attrs: Dict[str, str]) -> str:
     global DEV_SERVER
     if DEV_SERVER is None:
@@ -106,7 +113,7 @@ def get_html_dev(url: str, attrs: Dict[str, str]) -> str:
         except:
             raise Exception("Vite dev server is not started!")
     if url.endswith(('.css', '.scss', '.sass', '.less')):
-        return f'<link {attrs["css"]} href="{DEV_SERVER}/{url}" />'
+        return f'<link {attrs["css"]} href="{_dev_url(DEV_SERVER, url)}" />'
     elif url == 'react':
         return f"""
         <script type="module">
@@ -118,22 +125,56 @@ def get_html_dev(url: str, attrs: Dict[str, str]) -> str:
         </script>
         """
     else:
-        return f'<script {attrs["js"]} src="{DEV_SERVER}/{url}"></script>'
+        return f'<script {attrs["js"]} src="{_dev_url(DEV_SERVER, url)}"></script>'
     
+
+
+def _relative_to_base(found: str) -> str:
+    try:
+        relative = os.path.relpath(found, BASE_DIR)
+    except ValueError:
+        relative = found
+    return relative.replace('\\', '/')
+
+
+class PendingAsset(str):
+    __slots__ = ()
+
+
+def resolve_asset(arg: str) -> str:
+    found = find_asset(arg)
+    if CONFIG['STATIC_LOOKUP'] and arg not in FOUND_FILES_CACHE:
+        return PendingAsset(arg)
+    return found
 
 
 def find_asset(arg: str) -> str:
     """Find asset using Django's static finder with caching."""
     if arg in FOUND_FILES_CACHE:
         return FOUND_FILES_CACHE[arg]
-    
+
+    names_a_file = os.path.isabs(arg) and os.path.exists(arg)
+
     if not CONFIG['STATIC_LOOKUP']:
-        return arg
-    
-    found = finders.find(arg, False)
-    final = (found[ROOT_DIR_LEN:].strip('/\\').replace('\\', '/') 
-             if found is not None 
-             else arg.strip('/\\'))
-    
-    FOUND_FILES_CACHE[arg] = final
+        return arg if names_a_file else arg.strip('/\\')
+
+    if names_a_file:
+        final = _relative_to_base(arg)
+        FOUND_FILES_CACHE[str(arg)] = final
+        return final
+
+    relative = arg.strip('/\\')
+
+    try:
+        found = finders.find(relative, False)
+    except SuspiciousFileOperation:
+        found = None
+
+    if found is None:
+        if not RETRY_MISSES:
+            FOUND_FILES_CACHE[str(arg)] = relative
+        return relative
+
+    final = _relative_to_base(found)
+    FOUND_FILES_CACHE[str(arg)] = final
     return final

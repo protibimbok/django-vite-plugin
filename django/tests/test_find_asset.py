@@ -1,5 +1,7 @@
 """Resolving an asset path through Django's static finders (audit #5)."""
 
+import pytest
+
 
 def write(path, content=""):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -120,16 +122,34 @@ def test_static_lookup_off_leaves_a_real_absolute_path_alone(plugin, tmp_path):
 
 
 def test_a_miss_is_not_cached_so_a_new_file_is_picked_up(plugin, tmp_path):
-    """A file created while the server runs must not stay 'missing'."""
+    """A file created while the dev server runs must not stay 'missing'."""
     base = tmp_path / "project"
     base.mkdir()
-    p = plugin(BASE_DIR=base, STATICFILES_DIRS=[base / "static"])
+    p = plugin(DEBUG=True, BASE_DIR=base, STATICFILES_DIRS=[base / "static"])
 
     assert p.utils.find_asset("js/late.js") == "js/late.js"
     assert p.cache.FOUND_FILES_CACHE == {}
 
     write(base / "static" / "js" / "late.js")
     assert p.utils.find_asset("js/late.js") == "static/js/late.js"
+
+
+def test_a_miss_is_cached_with_debug_off(plugin, tmp_path, monkeypatch):
+    """Nothing appears under a production server, and a permanent miss -
+    `{% vite 'react' %}`, a project-level static/ path - would otherwise
+    walk the finders on every render."""
+    from django.contrib.staticfiles import finders
+
+    base = tmp_path / "project"
+    base.mkdir()
+    p = plugin(BASE_DIR=base, STATICFILES_DIRS=[base / "static"])
+
+    assert p.utils.find_asset("js/late.js") == "js/late.js"
+    assert p.cache.FOUND_FILES_CACHE == {"js/late.js": "js/late.js"}
+    assert not isinstance(p.utils.resolve_asset("js/late.js"), p.utils.PendingAsset)
+
+    monkeypatch.setattr(finders, "find", lambda *a, **k: pytest.fail("asked again"))
+    assert p.utils.find_asset("js/late.js") == "js/late.js"
 
 
 def test_a_resolved_asset_is_cached(plugin, tmp_path):
