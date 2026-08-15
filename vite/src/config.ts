@@ -61,7 +61,7 @@ export interface InternalConfig extends PluginConfig {
     appConfig: AppConfig
 }
 
-export type DevServerUrl = `${'http' | 'https'}://${string}:${number}`
+export type DevServerUrl = `${'http' | 'https'}://${string}`
 
 export async function resolvePluginConfig(
     config: PluginConfig,

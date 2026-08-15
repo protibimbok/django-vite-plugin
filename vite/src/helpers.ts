@@ -1,7 +1,8 @@
 import { spawn } from 'child_process'
 import fs from 'fs'
 import path from 'path'
-import { Alias, AliasOptions, ResolvedConfig, UserConfig, normalizePath } from 'vite'
+import colors from 'picocolors'
+import { Alias, AliasOptions, ResolvedConfig, normalizePath } from 'vite'
 import { InputOption } from 'rollup'
 
 import { parse, modify, applyEdits, ParseError } from 'jsonc-parser'
@@ -17,6 +18,9 @@ import { AddressInfo } from 'net'
 import { BASE_DIR } from './basedir.js'
 
 export { BASE_DIR }
+
+export const ORIGIN_PLACEHOLDER =
+    'http://__django_vite_plugin_placeholder__.protibimbok'
 
 function pythonCommand(
     args: string[],
@@ -381,11 +385,44 @@ export function getAppAliases(appConfig: AppConfig): Record<string, string> {
     return aliases
 }
 
+function configuredOrigin(config: ResolvedConfig): DevServerUrl | null {
+    const origin = config.server.origin
+    if (!origin || origin === ORIGIN_PLACEHOLDER) {
+        return null
+    }
+
+    const trimmed = origin.replace(/\/+$/, '')
+    let protocol: string
+    try {
+        protocol = new URL(trimmed).protocol
+    } catch {
+        protocol = ''
+    }
+
+    if (protocol !== 'http:' && protocol !== 'https:') {
+        config.logger.warn(
+            colors.yellow(
+                `django-vite-plugin: 'server.origin' is '${origin}', which is ` +
+                    'not an http or https URL. Django reads the hot file to ' +
+                    'find this server and cannot use anything else, so it is ' +
+                    'being written with the address vite bound instead.',
+            ),
+        )
+        return null
+    }
+
+    return trimmed as DevServerUrl
+}
+
 export function resolveDevServerUrl(
     address: AddressInfo,
     config: ResolvedConfig,
-    _userConfig: UserConfig,
 ): DevServerUrl {
+    const configured = configuredOrigin(config)
+    if (configured) {
+        return configured
+    }
+
     const configHmrProtocol =
         typeof config.server.hmr === 'object'
             ? config.server.hmr.protocol
@@ -402,10 +439,39 @@ export function resolveDevServerUrl(
         typeof config.server.hmr === 'object' ? config.server.hmr.host : null
     const configHost =
         typeof config.server.host === 'string' ? config.server.host : null
-    const serverAddress = isIpv6(address)
-        ? `[${address.address}]`
-        : address.address
-    const host = configHmrHost ?? configHost ?? serverAddress
+
+    const serverAddress =
+        isWildcard(address.address) || isIpv6Loopback(address.address)
+            ? 'localhost'
+            : isIpv6(address)
+              ? `[${address.address}]`
+              : address.address
+
+    const usableConfigHost =
+        [configHmrHost, configHost].find(
+            (h): h is string =>
+                typeof h === 'string' && h !== '' && !isWildcard(h),
+        ) ?? null
+
+    const host = usableConfigHost
+        ? bracketIpv6(usableConfigHost)
+        : serverAddress
+
+    if (!usableConfigHost && isWildcard(address.address)) {
+        config.logger.warn(
+            colors.yellow(
+                'django-vite-plugin: vite is exposed to the network ' +
+                    `(it is bound to '${address.address}'), but the hot file points ` +
+                    `browsers at '${host}', which only works on this machine. For ` +
+                    "other devices, set 'server.hmr.host' to the address they reach " +
+                    'this machine at. Reaching vite is not enough on its own: set ' +
+                    "'server.cors.origin' to the origin Django serves from, since " +
+                    'vite answers cross-origin requests from nothing but localhost ' +
+                    "by default, and 'server.allowedHosts' too if that address is a " +
+                    'name rather than an IP.',
+            ),
+        )
+    }
 
     const configHmrClientPort =
         typeof config.server.hmr === 'object'
@@ -415,6 +481,26 @@ export function resolveDevServerUrl(
 
     return `${protocol}://${host}:${port}`
 }
+
+function bracketIpv6(host: string): string {
+    if (!host.includes(':') || host.startsWith('[')) {
+        return host
+    }
+    return `[${host}]`
+}
+
+function isWildcard(host: string): boolean {
+    return host === '::' || host === '[::]' || host === '0.0.0.0'
+}
+
+function isIpv6Loopback(host: string): boolean {
+    return (
+        host === '::1' ||
+        host === '[::1]' ||
+        host === '0000:0000:0000:0000:0000:0000:0000:0001'
+    )
+}
+
 function isIpv6(address: AddressInfo): boolean {
     return (
         address.family === 'IPv6' ||

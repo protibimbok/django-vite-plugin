@@ -10,6 +10,7 @@ import {
     getAppAliases,
     resolveDevServerUrl,
     BASE_DIR,
+    ORIGIN_PLACEHOLDER,
     aliasesTheUserDidNotClaim,
 } from './helpers.js'
 import {
@@ -88,9 +89,7 @@ function djangoPlugin(config: InternalConfig): Plugin {
                 root,
                 build,
                 server: {
-                    origin:
-                        userConfig.server?.origin ??
-                        'http://__django_vite_plugin_placeholder__.protibimbok',
+                    origin: userConfig.server?.origin ?? ORIGIN_PLACEHOLDER,
                 },
                 resolve: {
                     alias: Array.isArray(userConfig.resolve?.alias)
@@ -109,10 +108,13 @@ function djangoPlugin(config: InternalConfig): Plugin {
             resolvedConfig = config
         },
         transform(code) {
-            return code.replace(
-                /http:\/\/__django_vite_plugin_placeholder__\.protibimbok/g,
-                resolvedConfig?.command === 'serve' ? viteDevServerUrl : config.appConfig.BUILD_URL_PREFIX,
-            )
+            return code
+                .split(ORIGIN_PLACEHOLDER)
+                .join(
+                    resolvedConfig?.command === 'serve'
+                        ? viteDevServerUrl
+                        : config.appConfig.BUILD_URL_PREFIX,
+                )
         },
         configureServer(server) {
             server.httpServer?.once('listening', () => {
@@ -125,7 +127,6 @@ function djangoPlugin(config: InternalConfig): Plugin {
                     viteDevServerUrl = resolveDevServerUrl(
                         address,
                         server.config,
-                        userConfigG,
                     )
                     fs.writeFileSync(
                         config.appConfig.HOT_FILE,
