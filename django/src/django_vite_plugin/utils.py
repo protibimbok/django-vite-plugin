@@ -1,11 +1,13 @@
 import os
-from typing import Dict
+from typing import Any, Dict
 from django.conf import settings
 from django.contrib.staticfiles import finders
 from django.core.exceptions import SuspiciousFileOperation
+from django.utils.html import conditional_escape
+from django.utils.safestring import SafeString, mark_safe
 from urllib.parse import urljoin
 from .config_helper import get_config
-from .constants import BASE_DIR
+from .constants import BASE_DIR, IS_CSS
 from .cache import FOUND_FILES_CACHE, VITE_MANIFEST, DEV_SERVER
 from .manifest import get_manifest_entry, load_manifest
 
@@ -14,7 +16,7 @@ CONFIG = get_config()
 RETRY_MISSES = bool(getattr(settings, 'DEBUG', False))
 
 # Set JS attributes for build mode
-if CONFIG['DEV_MODE'] is False and 'JS_ATTRS_BUILD' in CONFIG:
+if not CONFIG['DEV_MODE'] and CONFIG.get('JS_ATTRS_BUILD') is not None:
     CONFIG['JS_ATTRS'] = CONFIG['JS_ATTRS_BUILD']
 
 if not CONFIG['DEV_MODE']:
@@ -22,21 +24,17 @@ if not CONFIG['DEV_MODE']:
     load_manifest(manifest_path)
 
 
-def make_attrs(attrs: Dict[str, any]):
-    """
-    Compile attributes to a string
-    if attr is True then just add the attribute
-    """
-    attr_str = ''
+def make_attrs(attrs: Dict[str, Any]) -> SafeString:
+    parts = []
     for key, val in attrs.items():
-        attr_str += key
-
-        if val is False:
-            attr_str += '="false"'
-        elif val is not True:
-            attr_str += f'="{val}"'
-        attr_str += ' '
-    return attr_str[0:-1]
+        if val is False or val is None:
+            continue
+        key = conditional_escape(key)
+        if val is True:
+            parts.append(key)
+        else:
+            parts.append(f'{key}="{conditional_escape(val)}"')
+    return mark_safe(' '.join(parts))
 
 
 
@@ -52,10 +50,11 @@ def get_from_manifest(path: str, attrs: Dict[str, str]) -> str:
     assets = _get_css_files(manifest_entry, {
         'css': DEFAULT_CSS_ATTRS
     })
-    assets += get_html(
-        urljoin(CONFIG['BUILD_URL_PREFIX'], manifest_entry["file"]),
-        attrs
-    )
+    url = urljoin(CONFIG['BUILD_URL_PREFIX'], manifest_entry["file"])
+    if IS_CSS.search(path) or url.endswith('.css'):
+        assets += _link(url, attrs['css'])
+    else:
+        assets += _script(url, attrs['js'])
     return assets
 
 
@@ -80,9 +79,9 @@ def _get_css_files(
     if 'css' in manifest_entry:
         for css_path in manifest_entry['css']:
             if css_path not in already_processed:
-                html += get_html(
+                html += _link(
                     urljoin(CONFIG['BUILD_URL_PREFIX'], css_path),
-                    attrs
+                    DEFAULT_CSS_ATTRS,
                 )
             already_processed.append(css_path)
 
@@ -90,12 +89,18 @@ def _get_css_files(
 
 
 
-def get_html(url: str, attrs: Dict[str, str]) -> str:
-    if url.endswith('.css'):
-        return f'<link {attrs["css"]} href="{url}" />'
-    else:
-        return f'<script {attrs["js"]} src="{url}"></script>'
-    
+def _spaced(attrs: str) -> str:
+    return f' {attrs}' if attrs else ''
+
+
+def _link(url: str, attrs: str) -> str:
+    return f'<link{_spaced(attrs)} href="{conditional_escape(url)}" />'
+
+
+def _script(url: str, attrs: str) -> str:
+    return f'<script{_spaced(attrs)} src="{conditional_escape(url)}"></script>'
+
+
 
 def _dev_url(dev_server: str, path: str) -> str:
     if not (path.startswith('../') or os.path.isabs(path)):
@@ -112,8 +117,8 @@ def get_html_dev(url: str, attrs: Dict[str, str]) -> str:
                 DEV_SERVER = hotfile.read()
         except:
             raise Exception("Vite dev server is not started!")
-    if url.endswith(('.css', '.scss', '.sass', '.less')):
-        return f'<link {attrs["css"]} href="{_dev_url(DEV_SERVER, url)}" />'
+    if IS_CSS.search(url):
+        return _link(_dev_url(DEV_SERVER, url), attrs['css'])
     elif url == 'react':
         return f"""
         <script type="module">
@@ -125,7 +130,7 @@ def get_html_dev(url: str, attrs: Dict[str, str]) -> str:
         </script>
         """
     else:
-        return f'<script {attrs["js"]} src="{_dev_url(DEV_SERVER, url)}"></script>'
+        return _script(_dev_url(DEV_SERVER, url), attrs['js'])
     
 
 

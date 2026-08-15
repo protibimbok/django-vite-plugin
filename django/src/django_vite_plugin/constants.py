@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from django.conf import settings, global_settings
 from django.core.exceptions import ImproperlyConfigured
@@ -35,4 +36,18 @@ DEFAULT_CONFIG = {
 }
 
 # File extensions
-CSS_EXTENSIONS = {'.css', '.scss', '.sass', '.less'}
+CSS_EXTENSIONS = (
+    '.css',
+    '.less',
+    '.sass',
+    '.scss',
+    '.styl',
+    '.stylus',
+    '.pcss',
+    '.postcss',
+    '.sss',
+)
+
+IS_CSS = re.compile(
+    r'\.(' + '|'.join(ext.lstrip('.') for ext in CSS_EXTENSIONS) + r')($|\?)'
+)

@@ -10,30 +10,30 @@ class ViteAssetNode(template.Node):
         self.assets = assets
         self.attributes = attributes
         self.html = None
+        self.attrs = None
         self.has_dynamic_path = has_dynamic_path
 
         if not has_dynamic_attr:
             self.attrs = make_template_attrs(attributes)
             self.attributes = None
-        
+
         if not has_dynamic_attr and not has_dynamic_path:
             self.html = "".join(make_template_asset(asset, self.attrs) for asset in assets)
-            self.assets = None
 
     def render(self, context: template.Context) -> str:
         """Render the node with the given context."""
         if self.html is not None:
             return self.html
-        
+
+        attrs = self.attrs
         if self.attributes is not None:
-            attrs = {
+            attrs = make_template_attrs({
                 name: val.resolve(context) if not isinstance(val, str) else val
                 for name, val in self.attributes.items()
-            }
-            self.attrs = make_template_attrs(attrs)
-        
+            })
+
         return "".join(
-            make_template_asset(asset, self.attrs)
+            make_template_asset(asset, attrs)
             for asset in self.get_assets(context)
         )
 
