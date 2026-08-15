@@ -1,4 +1,5 @@
 {
+  "exclude": ["node_modules"],
   "compilerOptions": {
     "paths": {
       "@/*": [
@@ -17,8 +18,5 @@
         "./another_app/templates/another_app/*"
       ]
     }
-  },
-  "exclude": [
-    "node_modules"
-  ]
+  }
 }

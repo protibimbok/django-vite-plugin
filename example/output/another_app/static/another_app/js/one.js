@@ -1,1 +1,1 @@
-export const hello = () => console.log("Hello from another app");
+console.log('[output] another_app/js/one.js is running')

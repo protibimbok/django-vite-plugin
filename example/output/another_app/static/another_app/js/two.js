@@ -1,1 +1,0 @@
-export const hello = () => console.log("Hello from another app two.js");

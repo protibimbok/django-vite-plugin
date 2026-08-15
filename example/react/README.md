@@ -1,54 +1,33 @@
-# React + TypeScript + Vite
+# `react` — React + TypeScript integration
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React 19 counter rendered into a Django template.
 
-Currently, two official plugins are available:
+What it demonstrates:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **`{% vite 'react' %}`** — the special `'react'` argument injects the React
+  Fast Refresh preamble in dev mode (and renders nothing in a build). It must
+  come before the entry that uses React.
+- **`@vitejs/plugin-react`** working alongside `djangoVitePlugin`
+- **`@t:app` import aliases** — the entry point lives in `ui/static/ui/`,
+  while the `App` component lives in `ui/templates/ui/` and is imported as
+  `@t:ui/App` (the plugin writes the aliases into `tsconfig.json` so the IDE
+  understands them too)
 
-## Expanding the ESLint configuration
+## Run it
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+From the repository root ([setup](../README.md#quick-setup) first):
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```sh
+uv run pnpm dev react
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+This starts Django and Vite together (via `concurrently`). Then open
+http://localhost:8000 — edit `ui/templates/ui/App.tsx` and watch Fast
+Refresh keep the counter state.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Test the production build
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```sh
+uv run pnpm e:build react
+DEV_MODE=False uv run example/react/manage.py runserver
 ```

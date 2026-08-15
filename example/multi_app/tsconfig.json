@@ -1,44 +1,30 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
+    "target": "ES2022",
     "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "skipLibCheck": true,
-    "rootDir": "./",
-
-    /* Bundler mode */
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-
-    /* Linting */
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
     "paths": {
       "@/*": [
         "./*"
       ],
-      "@s:app1/*": [
-        "./app1/static/app1/*"
+      "@s:blog/*": [
+        "./blog/static/blog/*"
       ],
-      "@t:app1/*": [
-        "./app1/templates/app1/*"
+      "@t:blog/*": [
+        "./blog/templates/blog/*"
       ],
-      "@s:app2/*": [
-        "./app2/static/app2/*"
+      "@s:dashboard/*": [
+        "./dashboard/static/dashboard/*"
       ],
-      "@t:app2/*": [
-        "./app2/templates/app2/*"
+      "@t:dashboard/*": [
+        "./dashboard/templates/dashboard/*"
       ]
-    },
-
-    
+    }
   },
-  "include": ["*/static/", "static/"],
-  "exclude": ["node_modules", ".venv"]
+  "include": ["blog/static/**/*", "dashboard/static/**/*", "static/**/*"],
+  "exclude": ["node_modules"]
 }

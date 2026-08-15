@@ -1,47 +1,36 @@
 <script lang="ts">
-  import svelteLogo from './assets/svelte.svg'
-  import viteLogo from '/vite.svg'
-  import Counter from './lib/Counter.svelte'
+    let count = $state(0)
 </script>
 
 <main>
-  <div>
-    <a href="https://vite.dev" target="_blank" rel="noreferrer">
-      <img src={viteLogo} class="logo" alt="Vite Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank" rel="noreferrer">
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
-  </div>
-  <h1>Vite + Svelte</h1>
-
-  <div class="card">
-    <Counter />
-  </div>
-
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme" target="_blank" rel="noreferrer">SvelteKit</a>, the official Svelte app framework powered by Vite!
-  </p>
-
-  <p class="read-the-docs">
-    Click on the Vite and Svelte logos to learn more
-  </p>
+    <h1>Django + Vite + Svelte</h1>
+    <p>
+        Served by Django from <code>templates/index.html</code>; everything
+        else on this page comes from the <code>frontend/</code> directory.
+    </p>
+    <button onclick={() => count++}>
+        Count: {count}
+    </button>
+    <p class="hint">
+        Edit <code>frontend/src/App.svelte</code> — HMR keeps the count.
+    </p>
 </main>
 
 <style>
-  .logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-    transition: filter 300ms;
-  }
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
-  }
-  .logo.svelte:hover {
-    filter: drop-shadow(0 0 2em #ff3e00aa);
-  }
-  .read-the-docs {
-    color: #888;
-  }
+    main {
+        max-width: 32rem;
+        margin: 4rem auto;
+        text-align: center;
+    }
+
+    button {
+        font-size: 1.25rem;
+        padding: 0.5rem 1.5rem;
+        cursor: pointer;
+    }
+
+    .hint {
+        color: #64748b;
+        font-size: 0.875rem;
+    }
 </style>

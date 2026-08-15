@@ -1,3 +1,7 @@
-.just-nothing {
-    display: none;
+/* Imported from home/js/app.js — in a production build this file shows up
+   as a <link> collected from the manifest. */
+.stamp {
+    font-style: italic;
+    border-top: 1px solid #cbd5e1;
+    padding-top: 0.75rem;
 }

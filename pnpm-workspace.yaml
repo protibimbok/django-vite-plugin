@@ -4,7 +4,7 @@ packages:
   - example/react
   - example/multi_app
   - example/stderr
-  - example/custom_build/frontend
+  - example/custom_build
   - example/svelte-in-different-dir/frontend
 
 onlyBuiltDependencies:

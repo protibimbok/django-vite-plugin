@@ -1,14 +1,1 @@
-# python
-.venv/
-__pycache__
-
-# django
-static/
-media/
-db.sqlite3
-
-# vite, npm, node
-frontend/dist/
-frontend/env/
-frontend/node_modules/
-.hotfile
+/build/

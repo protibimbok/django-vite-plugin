@@ -1,0 +1,20 @@
+{% load vite %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}multi_app{% endblock %}</title>
+
+    {# Vite client — loaded once for every page, enables HMR in dev mode #}
+    {% vite %}
+    {# Each page adds its own app's entries here #}
+    {% block assets %}{% endblock %}
+</head>
+<body>
+    <nav>
+        <a href="/">Blog</a> · <a href="/dashboard/">Dashboard</a>
+    </nav>
+    {% block page %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,14 @@
+body {
+    font-family: system-ui, sans-serif;
+    max-width: 36rem;
+    margin: 2rem auto;
+    color: #1e293b;
+}
+
+nav a {
+    color: #2563eb;
+}
+
+#posts li {
+    margin: 0.5rem 0;
+}

@@ -1,16 +1,18 @@
-{% load static vite %}
-<!doctype html>
+{% load vite %}
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Vite + Svelte + TS</title>
-        {% vite %}
-        {% vite 'src/main.ts' %}
-    </head>
-    <body>
-        {% csrf_token %}
-        <div id="app"></div>
-    </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Django + Vite + Svelte</title>
+
+    {# Vite client — enables HMR in dev mode #}
+    {% vite %}
+    {# STATIC_LOOKUP is off: this is the path exactly as Vite sees it, #}
+    {# relative to the frontend/ directory. #}
+    {% vite 'src/main.ts' %}
+</head>
+<body>
+    <div id="app"></div>
+</body>
 </html>
