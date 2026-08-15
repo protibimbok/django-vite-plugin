@@ -1,6 +1,6 @@
 from typing import Dict, List, Any
 from django import template
-from ..utils import find_asset
+from ..utils import PendingAsset, find_asset
 from .utils import make_template_attrs, make_template_asset
 
 class ViteAssetNode(template.Node):
@@ -44,10 +44,12 @@ class ViteAssetNode(template.Node):
         
         assets = []
         for var in self.assets:
-            if isinstance(var, str):
+            if isinstance(var, PendingAsset):
+                assets.append(find_asset(var))
+            elif isinstance(var, str):
                 assets.append(var)
             else:
-                var = var.resolve(context)
+                var = var.resolve(context, ignore_failures=True)
                 if not var:
                     continue
                 assets.append(find_asset(var))

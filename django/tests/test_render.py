@@ -203,6 +203,23 @@ def test_a_found_path_is_still_baked_in_by_build_mode(plugin, manifest, tmp_path
     )
 
 
+def test_a_miss_is_baked_in_by_build_mode_too(plugin, manifest, tmp_path, monkeypatch):
+    """A project-level static/ path, or `{% vite 'react' %}`, never resolves;
+    asking the finders again would cost every production render the walk."""
+    from django.contrib.staticfiles import finders
+
+    manifest({"js/app.js": {"file": "assets/app-1234.js"}})
+    p = plugin(STATICFILES_DIRS=[tmp_path / "static"])
+
+    template = p.engine().from_string("{% load vite %}{% vite 'js/app.js' %}")
+    monkeypatch.setattr(finders, "find", lambda *a, **k: pytest.fail("asked again"))
+
+    assert template.nodelist[1].html == (
+        '<script type="module" src="/static/assets/app-1234.js"></script>'
+    )
+    assert template.render(Context()) == template.nodelist[1].html
+
+
 def test_a_stopped_dev_server_is_noticed(plugin, hot_file):
     """Removing the hot file must raise, not keep serving the dead URL."""
     path = hot_file("http://localhost:5173")
