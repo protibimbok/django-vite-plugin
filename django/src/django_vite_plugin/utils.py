@@ -13,10 +13,6 @@ ROOT_DIR_LEN = len(str(getattr(settings, "BASE_DIR")))
 
 CONFIG = get_config()
 
-# Ensure BUILD_URL_PREFIX ends with '/'
-if not CONFIG['BUILD_URL_PREFIX'].endswith('/'):
-    CONFIG['BUILD_URL_PREFIX'] += '/'
-
 # Set JS attributes for build mode
 if CONFIG['DEV_MODE'] is False and 'JS_ATTRS_BUILD' in CONFIG:
     CONFIG['JS_ATTRS'] = CONFIG['JS_ATTRS_BUILD']
