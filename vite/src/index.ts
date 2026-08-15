@@ -134,6 +134,8 @@ function djangoPlugin(config: InternalConfig): Plugin[] {
 
     let userConfigG: UserConfig
     let resolvedConfig: ResolvedConfig
+    let userBase: string | undefined
+    let userRoot: string | undefined
     let userNamedTheEntries = false
 
     let setDevServerUrl!: (url: DevServerUrl | undefined) => void
@@ -163,6 +165,8 @@ function djangoPlugin(config: InternalConfig): Plugin[] {
 
             const build = resolveBuildConfig(config, userConfig.build)
             userConfigG = userConfig
+            userBase = userConfig.base
+            userRoot = userConfig.root
             userNamedTheEntries =
                 userConfig.build?.rollupOptions?.input !== undefined
             const ours = aliasesTheUserDidNotClaim(
@@ -170,7 +174,9 @@ function djangoPlugin(config: InternalConfig): Plugin[] {
                 userConfig.resolve?.alias,
             )
 
-            const root = userConfig.root || config.root || '.'
+            const root = config.appConfig.STATIC_LOOKUP
+                ? config.appConfig.BASE_DIR
+                : userConfig.root || config.root || '.'
 
             if (config.addAliases !== false) {
                 writeAliases(
@@ -203,6 +209,54 @@ function djangoPlugin(config: InternalConfig): Plugin[] {
             }
         },
         configResolved(resolved) {
+            const baseDir = path.resolve(config.appConfig.BASE_DIR)
+            if (
+                config.appConfig.STATIC_LOOKUP &&
+                userRoot &&
+                path.resolve(process.cwd(), userRoot) !== baseDir
+            ) {
+                resolved.logger.warn(
+                    colors.yellow(
+                        `django-vite-plugin: 'root' is '${userRoot}' in your ` +
+                            `vite config, but the project is built from ` +
+                            `'${baseDir}' - STATIC_LOOKUP names every asset ` +
+                            'relative to BASE_DIR, so that is the one root the ' +
+                            "names resolve against. Set 'STATIC_LOOKUP': False " +
+                            'in DJANGO_VITE_PLUGIN to name entries relative to a ' +
+                            'root of your own.',
+                    ),
+                )
+            }
+
+            const prefix = config.appConfig.BUILD_URL_PREFIX
+            if (
+                resolved.command === 'build' &&
+                userBase &&
+                userBase !== prefix
+            ) {
+                resolved.logger.warn(
+                    colors.yellow(
+                        `django-vite-plugin: 'base' is '${userBase}' in your ` +
+                            `vite config, but the build is emitted for ` +
+                            `'${prefix}' - Django renders that prefix, so vite ` +
+                            'has to match it. Set BUILD_URL_PREFIX in ' +
+                            'DJANGO_VITE_PLUGIN (or STATIC_URL) instead.',
+                    ),
+                )
+            }
+
+            if (resolved.command === 'serve' && userBase && userBase !== '/') {
+                resolved.logger.warn(
+                    colors.yellow(
+                        `django-vite-plugin: 'base' is '${userBase}' in your ` +
+                            'vite config, but the dev server is serving from ' +
+                            "'/' - Django builds its asset URLs from the hot " +
+                            'file, which carries no base, so anything served ' +
+                            'under one would be asked for without it.',
+                    ),
+                )
+            }
+
             if (resolved.command === 'build') {
                 if (userNamedTheEntries) {
                     resolved.logger.warn(
@@ -276,18 +330,19 @@ function djangoPlugin(config: InternalConfig): Plugin[] {
 
             return () =>
                 server.middlewares.use((req, res, next) => {
-                    if (req.url === '/index.html') {
-                        res.statusCode = 404
-                        res.end(
-                            fs
-                                .readFileSync(
-                                    path.join(BASE_DIR, 'dist', 'info.html'),
-                                )
-                                .toString(),
-                        )
+                    if (req.url !== '/index.html') {
+                        return next()
                     }
 
-                    next()
+                    res.statusCode = 404
+                    res.setHeader('Content-Type', 'text/html')
+                    res.end(
+                        fs
+                            .readFileSync(
+                                path.join(BASE_DIR, 'dist', 'info.html'),
+                            )
+                            .toString(),
+                    )
                 })
         },
     }
@@ -335,23 +390,25 @@ function fullReload(config: InternalConfig): Plugin {
             name: 'django-vite-plugin-reloader',
         }
     }
-    let reloader = config.reloader
-    if (reloader === true) {
-        reloader = (file: string) => /\.(html|py)$/.test(file)
-    }
+    const reloader =
+        config.reloader === true
+            ? (file: string) => /\.(html|py)$/.test(file)
+            : config.reloader
 
     return {
         name: 'django-vite-plugin-reloader',
         configureServer({ ws, watcher }) {
-            watcher.on('change', (file) => {
-                // @ts-ignore
+            const onFileEvent = (file: string) => {
                 if (reloader(file)) {
                     setTimeout(
                         () => ws.send({ type: 'full-reload', path: '*' }),
                         config.delay,
                     )
                 }
-            })
+            }
+            for (const event of ['change', 'add', 'unlink'] as const) {
+                watcher.on(event, onFileEvent)
+            }
             if (config.watch) {
                 config.watch.forEach((file) => {
                     if (file.indexOf('__pycache__') >= 0) {

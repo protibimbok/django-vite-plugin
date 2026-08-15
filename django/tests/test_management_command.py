@@ -164,6 +164,9 @@ def test_the_config_action_reports_paths_and_apps(plugin, project, capsys):
     assert config["HOT_FILE"] == str(project / ".hotfile")
     assert sorted(config["INSTALLED_APPS"]) == ["blog", "home"]
     assert config["DJANGO_VERSION"]
+    # vite builds from BASE_DIR, because that is what the asset names are
+    # relative to - the manage.py directory is not always the same place
+    assert config["BASE_DIR"] == str(project)
 
 
 def test_find_static_resolves_each_argument(plugin, project, capsys):

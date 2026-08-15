@@ -123,6 +123,8 @@ test("@ follows vite's own root when the user config sets one", async (t) => {
         files: { 'frontend/jsconfig.json': EMPTY_CONFIG },
         cwd: 'frontend',
     })
+    process.env.STUB_STATIC_LOOKUP = '0'
+    t.after(() => delete process.env.STUB_STATIC_LOOKUP)
     await loadConfiguredPlugin(
         { input: 'blog/main.js', root: '..', addAliases: true },
         { root: '../apps' },
@@ -130,6 +132,21 @@ test("@ follows vite's own root when the user config sets one", async (t) => {
 
     assert.deepEqual(paths(project, 'frontend/jsconfig.json')['@/*'], [
         './../apps/*',
+    ])
+})
+
+test('@ is BASE_DIR while the static lookup names assets against it', async (t) => {
+    const project = createProject(t, {
+        files: { 'frontend/jsconfig.json': EMPTY_CONFIG },
+        cwd: 'frontend',
+    })
+    await loadConfiguredPlugin(
+        { input: 'blog/main.js', root: '..', addAliases: true },
+        { root: '../apps' },
+    )
+
+    assert.deepEqual(paths(project, 'frontend/jsconfig.json')['@/*'], [
+        './../*',
     ])
 })
 
@@ -227,11 +244,11 @@ test('a config at the vite root and one at the django root both get them', async
     // each names the same directories, spelled relative to itself
     const atVite = paths(project, 'frontend/jsconfig.json')
     assert.deepEqual(atVite['@s:blog/*'], ['./../apps/blog/static/blog/*'])
-    assert.deepEqual(atVite['@/*'], ['./*'])
+    assert.deepEqual(atVite['@/*'], ['./../*'])
 
     const atDjango = paths(project, 'jsconfig.json')
     assert.deepEqual(atDjango['@s:blog/*'], ['./apps/blog/static/blog/*'])
-    assert.deepEqual(atDjango['@/*'], ['./frontend/*'])
+    assert.deepEqual(atDjango['@/*'], ['./*'])
 })
 
 test('one directory playing two roles is still written once', async (t) => {

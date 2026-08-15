@@ -56,6 +56,7 @@ def format_config_for_output(config: Dict) -> Dict:
     """Format configuration for JSON output."""
     config["BUILD_DIR"] = str(config["BUILD_DIR"])
     config['MANIFEST'] = str(config['MANIFEST'])
+    config['BASE_DIR'] = str(BASE_DIR)
     config['INSTALLED_APPS'] = get_installed_apps()
     config['DJANGO_VERSION'] = django.get_version()
     return config

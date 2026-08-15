@@ -1,12 +1,13 @@
 import fs from 'fs'
-import { BuildOptions } from 'vite'
-import { glob } from 'glob'
+import path from 'path'
+import { BuildOptions, normalizePath } from 'vite'
 import { addStaticToInputs } from './helpers.js'
 import { InputOption } from 'rollup'
 
 export interface AppConfig {
     WS_CLIENT: string
     DEV_MODE: boolean
+    BASE_DIR: string
     BUILD_DIR: string
     MANIFEST: string
     BUILD_URL_PREFIX: string | null
@@ -76,7 +77,7 @@ export async function resolvePluginConfig(
         throw new Error('django-vite-plugin: no input is provided!')
     }
 
-    const promises: any = [
+    const promises: Promise<unknown>[] = [
         resolveFullReloadConfig(config, appConfig.INSTALLED_APPS),
     ]
 
@@ -86,13 +87,30 @@ export async function resolvePluginConfig(
 
     const res = await Promise.all(promises)
     if (appConfig.STATIC_LOOKUP) {
-        config.input = res[1]
+        config.input = underBaseDir(
+            res[1] as Awaited<ReturnType<typeof addStaticToInputs>>,
+            appConfig.BASE_DIR,
+        )
     }
 
     //@ts-expect-error no way to convert decleared types
     config.appConfig = appConfig
 
     return config as InternalConfig
+}
+
+function underBaseDir(
+    input: string[] | Record<string, string>,
+    baseDir: string,
+): string[] | Record<string, string> {
+    const under = (name: string) => normalizePath(path.resolve(baseDir, name))
+
+    if (Array.isArray(input)) {
+        return input.map(under)
+    }
+    return Object.fromEntries(
+        Object.entries(input).map(([name, file]) => [name, under(file)]),
+    )
 }
 
 export function resolveBuildConfig(
@@ -132,13 +150,12 @@ async function resolveFullReloadConfig(
         return
     }
 
-    const root = config.root || '.'
     const watch: string[] = []
 
     for (const app in apps) {
-        if (fs.existsSync(root + '/' + app)) {
-            watch.push(`${root}/${app}/**/*.py`)
+        if (fs.existsSync(apps[app])) {
+            watch.push(normalizePath(apps[app]))
         }
     }
-    config.watch = glob.globSync(watch)
+    config.watch = watch
 }

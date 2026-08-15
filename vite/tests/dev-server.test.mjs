@@ -623,6 +623,29 @@ test('a python file created after startup reloads too', async (t) => {
     assert.deepEqual(sent, [{ type: 'full-reload', path: '*' }])
 })
 
+test('deleting a python file reloads too', async (t) => {
+    createProject(t)
+    const reloader = await loadPluginNamed(
+        { input: 'blog/main.js', delay: 0 },
+        'reloader',
+    )
+
+    const watcher = new EventEmitter()
+    watcher.add = () => {}
+    const sent = []
+    const configureServer =
+        reloader.configureServer.handler ?? reloader.configureServer
+    configureServer.call(reloader, {
+        ws: { send: (m) => sent.push(m) },
+        watcher,
+    })
+
+    watcher.emit('unlink', '/some/app/deleted_view.py')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    assert.deepEqual(sent, [{ type: 'full-reload', path: '*' }])
+})
+
 test('the reloader can be turned off', async (t) => {
     createProject(t)
     const reloader = await loadPluginNamed(

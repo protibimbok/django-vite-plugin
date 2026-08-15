@@ -16,36 +16,56 @@ import {
     usePythonShim,
 } from './helpers.mjs'
 
+/** A path under the Django project, spelled the way vite spells one. */
+function under(root, name) {
+    return path.resolve(root, name).replace(/\\/g, '/')
+}
+
 test('a string input is accepted as the entry', { skip: process.platform === 'win32' }, async (t) => {
-    createProject(t)
+    const project = createProject(t)
     usePythonShim(t)
 
     const plugins = await loadPlugins('blog/main.js')
 
     assert.equal(plugins.length, 3)
     assert.deepEqual(callConfigHook(plugins[0]).build.rollupOptions.input, [
-        'apps/blog/static/blog/main.js',
+        under(project.root, 'apps/blog/static/blog/main.js'),
     ])
 })
 
 test('inputs are resolved through the static finder', async (t) => {
-    createProject(t)
+    const project = createProject(t)
     const plugin = await loadPlugin({ input: ['blog/main.js', 'other.js'] })
     assert.deepEqual(callConfigHook(plugin).build.rollupOptions.input, [
-        'apps/blog/static/blog/main.js',
-        'other.js',
+        under(project.root, 'apps/blog/static/blog/main.js'),
+        under(project.root, 'other.js'),
     ])
 })
 
 test('object inputs keep their names and resolve their paths', async (t) => {
-    createProject(t)
+    const project = createProject(t)
     const plugin = await loadPlugin({
         input: { app: 'blog/main.js', vendor: 'other.js' },
     })
     assert.deepEqual(callConfigHook(plugin).build.rollupOptions.input, {
-        app: 'apps/blog/static/blog/main.js',
-        vendor: 'other.js',
+        app: under(project.root, 'apps/blog/static/blog/main.js'),
+        vendor: under(project.root, 'other.js'),
     })
+})
+
+test('the entries are named against BASE_DIR, not the directory vite runs from', async (t) => {
+    // rollup resolves a relative entry against the cwd, so a vite config in a
+    // subdirectory built nothing at all, while dev - which resolves against
+    // vite's root - went on working
+    const project = createProject(t, {
+        files: { 'frontend/.keep': '' },
+        cwd: 'frontend',
+    })
+    const plugin = await loadPlugin({ input: 'blog/main.js', root: '..' })
+
+    assert.deepEqual(callConfigHook(plugin).build.rollupOptions.input, [
+        under(project.root, 'apps/blog/static/blog/main.js'),
+    ])
 })
 
 test('the build reads its output directory from Django', async (t) => {
@@ -330,16 +350,26 @@ function buildIn(root, build = {}) {
     }
 }
 
-test('a vite root away from the django one is called out', async (t) => {
-    // Django names assets relative to BASE_DIR and vite looks under its own
-    // root, so they 404 in dev and miss the manifest in a build - silently
+test('the root is BASE_DIR, wherever vite was started from', async (t) => {
+    const project = createProject(t, {
+        files: { 'frontend/.keep': '' },
+        cwd: 'frontend',
+    })
+    const plugin = await loadPlugin({ input: 'blog/main.js', root: '..' })
+
+    assert.equal(callConfigHook(plugin).root, project.root)
+})
+
+test('a root of their own is discarded, and not in silence', async (t) => {
+    // Django names assets relative to BASE_DIR, so a root anywhere else is a
+    // root the names cannot resolve against - it used to be taken as given
     const project = createProject(t, { files: { 'frontend/.keep': '' } })
     const plugin = await loadPlugin({ input: 'blog/main.js' })
+    const frontend = path.join(project.root, 'frontend')
 
-    const warnings = warningsFor(plugin, {
-        root: path.join(project.root, 'frontend'),
-    })
+    assert.equal(callConfigHook(plugin, { root: frontend }).root, project.root)
 
+    const warnings = warningsFor(plugin, { root: project.root })
     assert.match(warnings, /STATIC_LOOKUP/)
     assert.match(warnings, /frontend/)
 })
@@ -347,21 +377,20 @@ test('a vite root away from the django one is called out', async (t) => {
 test('the roots agreeing is the normal case and says nothing', async (t) => {
     const project = createProject(t)
     const plugin = await loadPlugin({ input: 'blog/main.js' })
+    callConfigHook(plugin, { root: project.root })
 
     assert.equal(warningsFor(plugin, { root: project.root }), '')
 })
 
-test('turning the static lookup off is the documented way out', async (t) => {
+test('turning the static lookup off hands the root back', async (t) => {
     const project = createProject(t, { files: { 'frontend/.keep': '' } })
     process.env.STUB_STATIC_LOOKUP = '0'
     t.after(() => delete process.env.STUB_STATIC_LOOKUP)
     const plugin = await loadPlugin({ input: 'blog/main.js' })
+    const frontend = path.join(project.root, 'frontend')
 
-    const warnings = warningsFor(plugin, {
-        root: path.join(project.root, 'frontend'),
-    })
-
-    assert.equal(warnings, '')
+    assert.equal(callConfigHook(plugin, { root: frontend }).root, frontend)
+    assert.equal(warningsFor(plugin, { root: frontend }), '')
 })
 
 test('a base of their own is discarded, and not in silence', async (t) => {

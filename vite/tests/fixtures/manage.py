@@ -39,6 +39,7 @@ print(json.dumps({
     "DJANGO_VERSION": "6.0",
     "WS_CLIENT": "@vite/client",
     "DEV_MODE": True,
+    "BASE_DIR": ROOT,
     "BUILD_DIR": os.path.join(ROOT, "static", "dist"),
     "MANIFEST": os.path.join(
         ROOT,
