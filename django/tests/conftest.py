@@ -117,3 +117,52 @@ def hot_file(tmp_path):
         return path
 
     return write
+
+
+@pytest.fixture
+def racing():
+    """Runs `call` twice at once, the second entering while the first is inside
+    `hook`, and returns what each was handed.
+
+    The caches are shared by every request, so what one render is given while
+    another is still reading the manifest is not something a sequential test
+    can see.
+    """
+    import threading
+    import time
+
+    def run(call, owner, hook, delay=0.2):
+        original = getattr(owner, hook)
+        inside = threading.Event()
+
+        def slow(*args, **kwargs):
+            inside.set()
+            time.sleep(delay)
+            return original(*args, **kwargs)
+
+        setattr(owner, hook, slow)
+        answers = {}
+
+        def answer(name, wait):
+            if wait:
+                inside.wait(5)
+            try:
+                answers[name] = call()
+            except Exception as error:
+                answers[name] = f"{type(error).__name__}: {error}"
+
+        threads = [
+            threading.Thread(target=answer, args=("first", False)),
+            threading.Thread(target=answer, args=("second", True)),
+        ]
+        try:
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+        finally:
+            setattr(owner, hook, original)
+
+        return answers["first"], answers["second"]
+
+    return run

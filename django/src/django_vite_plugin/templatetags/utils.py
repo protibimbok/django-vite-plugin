@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional, Set, Tuple
 from django import template
 from django.utils.text import unescape_string_literal
 from ..utils import (
@@ -96,6 +96,14 @@ def parse_template_args(
 
     return assets, kwargs, has_dynamic_path, has_dynamic_attr
 
-def make_template_asset(asset: str, attrs: Dict[str, str]) -> str:
-    """Generate asset HTML based on mode."""
-    return get_html_dev(asset, attrs) if CONFIG['DEV_MODE'] else get_from_manifest(asset, attrs)
+def make_template_assets(assets: List[str], attrs: Dict[str, str]) -> str:
+    """Render every asset of one tag, as one run."""
+    if CONFIG['DEV_MODE']:
+        return ''.join(get_html_dev(asset, attrs) for asset in assets)
+
+    seen_imports: Set[str] = set()
+    seen_css: Set[str] = set()
+    return ''.join(
+        get_from_manifest(asset, attrs, seen_imports, seen_css)
+        for asset in assets
+    )

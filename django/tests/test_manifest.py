@@ -8,6 +8,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
+from django.template import Context
 
 SRC = Path(__file__).resolve().parents[1] / "src"
 
@@ -44,12 +45,12 @@ def test_missing_manifest_is_reported_at_the_failing_lookup(plugin, capsys):
 def test_a_later_successful_load_clears_the_error(plugin, manifest):
     p = plugin()
     p.utils
-    assert p.cache.MANIFEST_ERROR is not None
+    assert p.cache.VITE_MANIFEST[2] is not None
 
     path = manifest({"js/app.js": {"file": "assets/app-1234.js"}})
     p.manifest.load_manifest(path)
 
-    assert p.cache.MANIFEST_ERROR is None
+    assert p.cache.VITE_MANIFEST[2] is None
     assert p.manifest.get_manifest_entry("js/app.js")["file"] == "assets/app-1234.js"
 
 
@@ -79,7 +80,7 @@ def test_clearing_the_caches_picks_up_a_rebuild(plugin, manifest):
 def test_a_rebuild_is_picked_up_without_clearing_anything(plugin, manifest):
     """Previewing a build means rebuilding under a server that keeps running."""
     manifest({"js/app.js": {"file": "assets/app-old.js"}})
-    p = plugin()
+    p = plugin(DEBUG=True, DJANGO_VITE_PLUGIN={"DEV_MODE": False})
     p.utils
     assert p.manifest.get_manifest_entry("js/app.js")["file"] == "assets/app-old.js"
 
@@ -91,7 +92,7 @@ def test_a_rebuild_is_picked_up_without_clearing_anything(plugin, manifest):
 def test_a_rebuild_that_only_renamed_things_is_picked_up_too(plugin, manifest):
     """Every name keeps its length, so the size alone would not give it away."""
     manifest({"js/app.js": {"file": "assets/app-1111.js"}})
-    p = plugin()
+    p = plugin(DEBUG=True, DJANGO_VITE_PLUGIN={"DEV_MODE": False})
     p.utils
     p.manifest.get_manifest_entry("js/app.js")
 
@@ -101,8 +102,25 @@ def test_a_rebuild_that_only_renamed_things_is_picked_up_too(plugin, manifest):
     assert p.manifest.get_manifest_entry("js/app.js")["file"] == "assets/app-2222.js"
 
 
+def test_a_rebuild_inside_one_float_tick_is_picked_up(plugin, manifest):
+    """`st_mtime` is a float. At epoch scale it cannot resolve much under a
+    microsecond, so two writes that close compare equal and the rebuild is
+    missed unless the exact stamp is what gets compared."""
+    path = manifest({"js/app.js": {"file": "assets/app-1111.js"}})
+    stamp = 1_700_000_000_000_000_000
+    os.utime(path, ns=(stamp, stamp))
+    p = plugin(DEBUG=True, DJANGO_VITE_PLUGIN={"DEV_MODE": False})
+    p.utils
+    assert p.manifest.get_manifest_entry("js/app.js")["file"] == "assets/app-1111.js"
+
+    path = manifest({"js/app.js": {"file": "assets/app-2222.js"}})
+    os.utime(path, ns=(stamp + 100, stamp + 100))
+
+    assert p.manifest.get_manifest_entry("js/app.js")["file"] == "assets/app-2222.js"
+
+
 def test_a_build_that_arrives_late_is_picked_up(plugin, manifest):
-    p = plugin()
+    p = plugin(DEBUG=True, DJANGO_VITE_PLUGIN={"DEV_MODE": False})
     p.utils
     with pytest.raises(RuntimeError, match="Cannot resolve"):
         p.manifest.get_manifest_entry("js/app.js")
@@ -110,7 +128,7 @@ def test_a_build_that_arrives_late_is_picked_up(plugin, manifest):
     manifest({"js/app.js": {"file": "assets/app-1234.js"}})
 
     assert p.manifest.get_manifest_entry("js/app.js")["file"] == "assets/app-1234.js"
-    assert p.cache.MANIFEST_ERROR is None
+    assert p.cache.VITE_MANIFEST[2] is None
 
 
 def test_an_unchanged_manifest_is_not_read_again(plugin, manifest):
@@ -177,7 +195,7 @@ def test_a_deleted_manifest_stops_the_old_filenames(plugin, manifest):
     # The entries used to survive the failed reread, so the server kept
     # rendering a build that was no longer on disk
     path = manifest({"js/app.js": {"file": "assets/app-old.js"}})
-    p = plugin()
+    p = plugin(DEBUG=True, DJANGO_VITE_PLUGIN={"DEV_MODE": False})
     p.utils
     assert p.manifest.get_manifest_entry("js/app.js")["file"] == "assets/app-old.js"
 
@@ -192,7 +210,7 @@ def test_a_corrupt_manifest_keeps_reporting_itself(plugin, manifest):
     # once, having already recorded the new signature, and every lookup after
     # that quietly answered from the previous build
     path = manifest({"js/app.js": {"file": "assets/app-old.js"}})
-    p = plugin()
+    p = plugin(DEBUG=True, DJANGO_VITE_PLUGIN={"DEV_MODE": False})
     p.utils
     p.manifest.get_manifest_entry("js/app.js")
 
@@ -204,18 +222,50 @@ def test_a_corrupt_manifest_keeps_reporting_itself(plugin, manifest):
         p.manifest.get_manifest_entry("js/app.js")
 
 
+def test_a_production_render_does_not_stat_the_manifest(plugin, manifest):
+    """DEBUG off is a deployment: nothing rebuilds under the running server, so
+    nothing may pay a syscall per render to notice that it did."""
+    manifest({"js/app.js": {"file": "assets/app-1234.js"}})
+    p = plugin(DEBUG=False)
+    p.utils
+
+    seen = []
+    real = os.stat
+    os.stat = lambda path, *a, **kw: seen.append(str(path)) or real(path, *a, **kw)
+    try:
+        for _ in range(3):
+            p.manifest.get_manifest_entry("js/app.js")
+    finally:
+        os.stat = real
+
+    assert [s for s in seen if "manifest.json" in s] == []
+
+
+def test_clearing_the_caches_refills_them_even_with_debug_off(plugin, manifest):
+    """`clear_caches()` is the supported way to pick up a rebuild, and it is
+    the one that must keep working where the stat is not paid."""
+    manifest({"js/app.js": {"file": "assets/app-old.js"}})
+    p = plugin(DEBUG=False)
+    p.utils
+
+    manifest({"js/app.js": {"file": "assets/app-new.js"}})
+    p.cache.clear_caches()
+
+    assert p.manifest.get_manifest_entry("js/app.js")["file"] == "assets/app-new.js"
+
+
 def test_a_reload_replaces_the_manifest_rather_than_emptying_it(plugin, manifest):
     # It used to clear the dict and refill it, so a render on another thread
     # could land in the gap and fail as 'Cannot find X in Vite manifest'
     manifest({"js/app.js": {"file": "assets/app-old.js"}})
-    p = plugin()
+    p = plugin(DEBUG=True, DJANGO_VITE_PLUGIN={"DEV_MODE": False})
     p.utils
-    before = p.cache.VITE_MANIFEST
+    before = p.cache.VITE_MANIFEST[1]
 
     manifest({"js/app.js": {"file": "assets/app-new.js"}})
     assert p.manifest.get_manifest_entry("js/app.js")["file"] == "assets/app-new.js"
 
-    assert p.cache.VITE_MANIFEST is not before
+    assert p.cache.VITE_MANIFEST[1] is not before
     # Whoever was holding the old one still has a whole build, not an empty dict
     assert before == {"js/app.js": {"file": "assets/app-old.js"}}
 
@@ -385,3 +435,42 @@ def test_dangling_import_names_the_missing_entry(plugin, manifest):
     p = plugin()
     with pytest.raises(RuntimeError, match="Cannot find nope.js in Vite manifest"):
         p.utils.get_from_manifest("a.js", p.attrs())
+
+
+def test_a_rebuild_landing_while_a_request_is_in_flight(plugin, manifest, racing):
+    """The signature used to be stamped before the entries it was taken for, so
+    a reader arriving in between was handed the new signature over the old
+    entries - and cached them as current, leaving the build frozen for good."""
+    manifest({"js/app.js": {"file": "assets/app-old.js"}})
+    p = plugin(DEBUG=True, DJANGO_VITE_PLUGIN={"DEV_MODE": False, "STATIC_LOOKUP": False})
+    template = p.engine().from_string("{% load vite %}{% vite 'js/app.js' %}")
+    template.render(Context())
+
+    manifest({"js/app.js": {"file": "assets/app-new.js"}})
+
+    first, second = racing(
+        lambda: template.render(Context()), p.manifest.json, "load"
+    )
+
+    for answer in (first, second):
+        assert "app-new.js" in answer, answer
+    assert "app-new.js" in template.render(Context())
+
+
+def test_a_cold_node_serving_two_requests_at_once(plugin, manifest, racing):
+    """`MANIFEST_LOADED` was set before the entries landed, so the second
+    reader was told the manifest was loaded and found nothing in it."""
+    manifest({"js/app.js": {"file": "assets/app-1234.js"}})
+    p = plugin(DJANGO_VITE_PLUGIN={"DEV_MODE": False, "STATIC_LOOKUP": False})
+    p.engine().from_string("{% load vite %}{% vite 'js/app.js' %}").render(Context())
+
+    p.cache.clear_caches()
+
+    def compile_and_render():
+        template = p.engine().from_string("{% load vite %}{% vite 'js/app.js' %}")
+        return template.render(Context())
+
+    first, second = racing(compile_and_render, p.manifest.json, "load")
+
+    for answer in (first, second):
+        assert "app-1234.js" in answer, answer

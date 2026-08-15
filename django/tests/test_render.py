@@ -279,7 +279,7 @@ def test_build_mode_renders_the_rebuild_rather_than_the_build_before_it(
     plugin, manifest
 ):
     manifest({"js/app.js": {"file": "assets/app-old.js"}})
-    p = plugin()
+    p = plugin(DEBUG=True, DJANGO_VITE_PLUGIN={"DEV_MODE": False})
     assert render(p, "{% vite 'js/app.js' %}") == (
         '<script type="module" src="/static/assets/app-old.js"></script>'
     )
@@ -296,7 +296,11 @@ def test_a_parsed_template_renders_the_rebuild_too(plugin, manifest, tmp_path):
     (tmp_path / "static" / "js").mkdir(parents=True)
     (tmp_path / "static" / "js" / "app.js").write_text("", encoding="utf-8")
     manifest({"static/js/app.js": {"file": "assets/app-old.js"}})
-    p = plugin(STATICFILES_DIRS=[tmp_path / "static"])
+    p = plugin(
+        DEBUG=True,
+        STATICFILES_DIRS=[tmp_path / "static"],
+        DJANGO_VITE_PLUGIN={"DEV_MODE": False},
+    )
 
     template = p.engine().from_string("{% load vite %}{% vite 'js/app.js' %}")
     assert 'src="/static/assets/app-old.js"' in template.render(Context())
@@ -311,7 +315,10 @@ def test_a_parsed_template_renders_the_rebuild_without_the_static_lookup(
 ):
     """With the lookup off every path is baked, so nothing else would notice."""
     manifest({"js/app.js": {"file": "assets/app-old.js"}})
-    p = plugin(DJANGO_VITE_PLUGIN={"DEV_MODE": False, "STATIC_LOOKUP": False})
+    p = plugin(
+        DEBUG=True,
+        DJANGO_VITE_PLUGIN={"DEV_MODE": False, "STATIC_LOOKUP": False},
+    )
 
     template = p.engine().from_string("{% load vite %}{% vite 'js/app.js' %}")
     assert 'src="/static/assets/app-old.js"' in template.render(Context())

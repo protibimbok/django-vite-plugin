@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Optional, Set
 from django.conf import settings
 from django.contrib.staticfiles import finders
 from django.core.exceptions import SuspiciousFileOperation
@@ -8,7 +8,8 @@ from django.utils.safestring import SafeString, mark_safe
 from urllib.parse import urljoin
 from .config_helper import get_config
 from .constants import BASE_DIR, IS_CSS
-from .cache import FOUND_FILES_CACHE, VITE_MANIFEST, DEV_SERVER
+from . import cache
+from .cache import FOUND_FILES_CACHE, DEV_SERVER
 from .manifest import get_manifest_entry, load_manifest
 
 CONFIG = get_config()
@@ -38,14 +39,17 @@ def make_attrs(attrs: Dict[str, Any]) -> SafeString:
 DEFAULT_CSS_ATTRS = make_attrs(CONFIG['CSS_ATTRS'])
 
 
-def get_from_manifest(path: str, attrs: Dict[str, str]) -> str:
+def get_from_manifest(
+    path: str,
+    attrs: Dict[str, str],
+    seen_imports: Optional[Set[str]] = None,
+    seen_css: Optional[Set[str]] = None,
+) -> str:
     """Get assets from manifest for a given path."""
     if path == 'react':
         return ''
     manifest_entry = get_manifest_entry(path)
-    assets = _get_css_files(manifest_entry, {
-        'css': DEFAULT_CSS_ATTRS
-    })
+    assets = _get_css_files(manifest_entry, seen_imports, seen_css)
     url = urljoin(CONFIG['BUILD_URL_PREFIX'], manifest_entry["file"])
     if IS_CSS.search(path) or url.endswith('.css'):
         assets += _link(url, attrs['css'])
@@ -57,29 +61,33 @@ def get_from_manifest(path: str, attrs: Dict[str, str]) -> str:
 
 def _get_css_files(
     manifest_entry: Dict[str, str],
-    attrs: Dict[str, str],
-    already_processed = None
+    seen_imports: Optional[Set[str]] = None,
+    seen_css: Optional[Set[str]] = None,
 ) -> str:
-    if already_processed is None:
-        already_processed = []
+    if seen_imports is None:
+        seen_imports = set()
+    if seen_css is None:
+        seen_css = set()
     html = ''
 
-    if 'imports' in manifest_entry:
-        for import_path in manifest_entry['imports']:
-            html += _get_css_files(
-                VITE_MANIFEST[import_path],
-                attrs,
-                already_processed
-            )
+    for import_path in manifest_entry.get('imports', ()):
+        if import_path in seen_imports:
+            continue
+        seen_imports.add(import_path)
+        html += _get_css_files(
+            get_manifest_entry(import_path),
+            seen_imports,
+            seen_css
+        )
 
-    if 'css' in manifest_entry:
-        for css_path in manifest_entry['css']:
-            if css_path not in already_processed:
-                html += _link(
-                    urljoin(CONFIG['BUILD_URL_PREFIX'], css_path),
-                    DEFAULT_CSS_ATTRS,
-                )
-            already_processed.append(css_path)
+    for css_path in manifest_entry.get('css', ()):
+        if css_path in seen_css:
+            continue
+        seen_css.add(css_path)
+        html += _link(
+            urljoin(CONFIG['BUILD_URL_PREFIX'], css_path),
+            DEFAULT_CSS_ATTRS,
+        )
 
     return html
 
