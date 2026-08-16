@@ -352,7 +352,7 @@ def test_js_attrs_build_applies_however_dev_mode_is_spelled_falsy(plugin, manife
         DJANGO_VITE_PLUGIN={"DEV_MODE": 0, "JS_ATTRS_BUILD": {"defer": True}}
     )
     assert render(p, "{% vite 'js/app.js' %}") == (
-        '<script defer src="/static/assets/app-1234.js"></script>'
+        '<script type="module" defer src="/static/assets/app-1234.js"></script>'
     )
 
 

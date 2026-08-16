@@ -27,6 +27,12 @@ def get_config() -> Dict[str, Any]:
         config['BUILD_URL_PREFIX'], config['DEV_MODE']
     )
 
+    config['DEV_MODE'] = bool(config['DEV_MODE'])
+    if not config['DEV_MODE'] and config.get('JS_ATTRS_BUILD') is not None:
+        config['JS_ATTRS'] = _deep_copy(
+            config['JS_ATTRS_BUILD'], config['JS_ATTRS']
+        )
+
     return config
 
 

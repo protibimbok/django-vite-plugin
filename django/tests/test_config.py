@@ -58,6 +58,57 @@ def test_nested_values_merge_over_the_defaults(plugin):
     }
 
 
+def test_build_attrs_merge_over_the_ones_you_wrote(plugin):
+    """Over JS_ATTRS, not over the default it was itself merged over."""
+    p = plugin(
+        DJANGO_VITE_PLUGIN={
+            "DEV_MODE": False,
+            "JS_ATTRS": {"type": "module", "crossorigin": True},
+            "JS_ATTRS_BUILD": {"defer": True},
+        }
+    )
+    assert p.config_helper.get_config()["JS_ATTRS"] == {
+        "type": "module",
+        "crossorigin": True,
+        "defer": True,
+    }
+
+
+def test_build_attrs_are_left_alone_in_dev_mode(plugin):
+    p = plugin(
+        DJANGO_VITE_PLUGIN={
+            "DEV_MODE": True,
+            "JS_ATTRS": {"type": "module"},
+            "JS_ATTRS_BUILD": {"defer": True},
+        }
+    )
+    assert p.config_helper.get_config()["JS_ATTRS"] == {"type": "module"}
+
+
+def test_build_attrs_reach_the_tag_that_renders_them(plugin, manifest):
+    manifest({"js/app.js": {"file": "assets/app-1234.js"}})
+    p = plugin(
+        DJANGO_VITE_PLUGIN={
+            "DEV_MODE": False,
+            "STATIC_LOOKUP": False,
+            "JS_ATTRS": {"type": "module"},
+            "JS_ATTRS_BUILD": {"defer": True},
+        }
+    )
+    html = p.engine().from_string("{% load vite %}{% vite 'js/app.js' %}").render(
+        Context()
+    )
+    assert 'type="module"' in html
+    assert "defer" in html
+
+
+@pytest.mark.parametrize("dev_mode", [1, "yes"])
+def test_a_truthy_dev_mode_is_reduced_to_a_bool(plugin, dev_mode):
+    """Everything downstream asks `is False` of it somewhere."""
+    p = plugin(DJANGO_VITE_PLUGIN={"DEV_MODE": dev_mode})
+    assert p.config_helper.get_config()["DEV_MODE"] is True
+
+
 def test_manifest_and_hot_file_are_derived_from_the_build_dir(plugin, tmp_path):
     p = plugin()
     config = p.config_helper.get_config()

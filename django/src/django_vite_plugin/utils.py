@@ -15,10 +15,6 @@ CONFIG = get_config()
 
 RETRY_MISSES = bool(getattr(settings, 'DEBUG', False))
 
-# Set JS attributes for build mode
-if not CONFIG['DEV_MODE'] and CONFIG.get('JS_ATTRS_BUILD') is not None:
-    CONFIG['JS_ATTRS'] = CONFIG['JS_ATTRS_BUILD']
-
 if not CONFIG['DEV_MODE']:
     manifest_path = CONFIG['MANIFEST']
     load_manifest(manifest_path)
