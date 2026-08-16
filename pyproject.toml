@@ -1,0 +1,26 @@
+# Workspace root. Not a published package - the PyPI package lives in django/.
+# `uv sync` here installs django/ editable together with its test dependencies;
+# with plain pip, use `pip install -e "./django[test]"` instead.
+
+[project]
+name = "django-vite-plugin-workspace"
+version = "0.0.0"
+requires-python = ">=3.9"
+
+[dependency-groups]
+dev = ["django-vite-plugin[test]"]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["django"]
+
+[tool.uv.sources]
+django-vite-plugin = { workspace = true }
+
+# Mirrors django/pyproject.toml so a bare `pytest` from the repo root
+# runs the same suite with the same settings.
+[tool.pytest.ini_options]
+testpaths = ["django/tests"]
+filterwarnings = ["error"]
