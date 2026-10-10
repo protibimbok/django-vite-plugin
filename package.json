@@ -7,6 +7,7 @@
         "build": "pnpm --filter django-vite-plugin build",
         "test": "pnpm --filter django-vite-plugin test",
         "lint": "pnpm --filter django-vite-plugin lint",
+        "release": "pnpm lint && pnpm test && pnpm --filter django-vite-plugin publish",
         "dev": "node --experimental-strip-types script/example.ts dev",
         "e:build": "node --experimental-strip-types script/example.ts build"
     },
