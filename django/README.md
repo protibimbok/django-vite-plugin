@@ -42,8 +42,9 @@ DJANGO_VITE_PLUGIN = {
     'JS_ATTRS': {
         'type': 'module'
     },
-    # Unset by default; when given, replaces JS_ATTRS entirely if DEV_MODE is off
-    # 'JS_ATTRS_BUILD': {'type': 'module', 'defer': True},
+    # Unset by default; when given, merged over JS_ATTRS if DEV_MODE is off.
+    # Set an attribute to None to drop one of the defaults.
+    # 'JS_ATTRS_BUILD': {'defer': True},
     'CSS_ATTRS': {
         'rel' : 'stylesheet',
         'type': 'text/css'

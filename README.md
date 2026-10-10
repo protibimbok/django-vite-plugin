@@ -172,9 +172,9 @@ DJANGO_VITE_PLUGIN = {
         'type': 'module',
     },
     
-    # Script attributes for production builds only
+    # Merged over JS_ATTRS for production builds only; set an attribute to
+    # None to drop one of the defaults
     'JS_ATTRS_BUILD': {
-        'type': 'module',
         'defer': True,
     },
 
@@ -340,7 +340,7 @@ renders asset URLs from that same prefix, so the two cannot disagree.
     built assets will 404. Only `DEV_MODE` needs to be turned off to load the
     build instead of the dev server. Keeping `DEBUG` on is also what lets a
     rebuild be picked up without restarting Django: the check costs a `stat`
-    per render, so it is not made in a deployment.
+    per `{% vite %}` tag rendered, so it is not made in a deployment.
 
     Listing `BUILD_DIR` in `STATICFILES_DIRS` matters: `runserver` answers
     every URL under `STATIC_URL` itself and 404s anything the static finders

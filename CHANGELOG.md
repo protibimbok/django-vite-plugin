@@ -87,8 +87,11 @@ are released together.
   quoted argument is a path even when it contains `=`, and a malformed tag
   reports itself instead of raising `IndexError` or silently dropping
   arguments.
-- **Attributes.** `JS_ATTRS_BUILD` applies however `DEV_MODE` is spelled
-  falsy, and an explicit `None` no longer breaks every render. An attribute
+- **Attributes.** `JS_ATTRS_BUILD` is merged over `JS_ATTRS` rather than
+  replacing it, so a build keeps `type="module"` without repeating it there —
+  set it to `None` if it is the classic-script build you were after. It
+  applies however `DEV_MODE` is spelled falsy, and an explicit `None` no
+  longer breaks every render. An attribute
   set to `False` or `None` is left out rather than rendered as the string
   `"false"`, which HTML reads as set — this is also how a `JS_ATTRS` or
   `CSS_ATTRS` default is dropped. A tag's attributes go to the assets it
